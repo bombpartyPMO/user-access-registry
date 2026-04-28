@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BombParty — System Access Registry</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;color:#172B4D;background:#F4F5F7;min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.55}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0F3053 0%,#173E69 100%);display:flex;align-items:center;justify-content:center;z-index:9999;padding:2rem}
+.login-box{background:#fff;border-radius:20px;padding:2.8rem 2.6rem;width:100%;max-width:420px;box-shadow:0 28px 70px rgba(0,0,0,.3)}
+.lb-brand{display:flex;align-items:center;gap:11px;margin-bottom:2rem}
+.lb-icon{width:44px;height:44px;background:#0F3053;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.lb-name{font-size:15px;font-weight:700;color:#0F3053}
+.lb-sub{font-size:11px;color:#5E6C84;margin-top:2px}
+.lb-title{font-size:22px;font-weight:700;color:#172B4D;margin-bottom:4px}
+.lb-desc{font-size:12px;color:#5E6C84;margin-bottom:2rem;line-height:1.5}
+.lf{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.9rem}
+.lf label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E6C84}
+.lf input{font-family:'Inter',sans-serif;font-size:13px;color:#172B4D;background:#F4F5F7;border:1.5px solid #DFE1E6;border-radius:9px;padding:.68rem .88rem;outline:none;transition:all .18s}
+.lf input:focus{border-color:#0052CC;background:#fff;box-shadow:0 0 0 3px rgba(0,82,204,.1)}
+.lb-btn{width:100%;padding:.85rem;background:#0F3053;color:#fff;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:.4rem;transition:all .2s}
+.lb-btn:hover{background:#173E69;transform:translateY(-1px)}
+.lb-err{font-size:11px;color:#BF2600;margin-top:.7rem;padding:9px 13px;background:#FFEBE6;border-radius:8px;text-align:center;display:none}
+.lb-note{margin-top:1.5rem;padding:11px 14px;background:#F4F5F7;border-radius:9px;font-size:11px;color:#5E6C84;line-height:1.55;text-align:center}
+
+/* SHELL */
+.app{display:flex;height:100vh;overflow:hidden}
+.lnav{width:248px;background:#0052CC;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+.lnav-body{padding:10px 0;flex:1}
+.lnav-sec{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#B3D4FF;padding:12px 18px 4px}
+.lnav-item{display:block;padding:8px 18px;font-size:12px;color:#DEEBFF;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;font-weight:400;transition:background .1s}
+.lnav-item:hover{background:rgba(255,255,255,.1);color:#fff}
+.lnav-item.active{background:rgba(255,255,255,.18);color:#fff;font-weight:600;border-left:3px solid #fff;padding-left:15px}
+.lnav-sub{display:block;padding:6px 18px 6px 30px;font-size:11px;color:#B3D4FF;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:color .1s}
+.lnav-sub:hover{color:#fff}
+.lnav-footer{padding:12px 16px;border-top:1px solid rgba(255,255,255,.1)}
+.lnav-logout{width:100%;padding:8px;background:rgba(220,38,38,.12);color:#FCA5A5;border:1px solid rgba(220,38,38,.2);border-radius:7px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer}
+.lnav-logout:hover{background:rgba(220,38,38,.25)}
+
+/* TOPBAR */
+.main{flex:1;overflow:auto;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:1px solid #DFE1E6;padding:0 22px;height:46px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10;transition:background .2s}
+.topbar.editing{background:#FFFAE6;border-bottom-color:#FF8B00}
+.bc{font-size:11px;color:#5E6C84;display:flex;align-items:center;gap:5px}
+.bc a{color:#0052CC;text-decoration:none;cursor:pointer}.bc a:hover{text-decoration:underline}
+.tb-right{display:flex;align-items:center;gap:8px}
+.tb-user{display:flex;align-items:center;gap:7px;font-size:11px;color:#5E6C84}
+.tb-av{width:26px;height:26px;border-radius:50%;background:#0F3053;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.tb-btn{padding:5px 12px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #DFE1E6;background:#F4F5F7;color:#172B4D;font-family:'Inter',sans-serif;transition:all .15s;display:flex;align-items:center;gap:5px}
+.tb-btn:hover{background:#EBECF0}
+.tb-btn.edit-on{background:#00875A;color:#fff;border-color:#00875A}
+.tb-btn.edit-on:hover{background:#006644}
+.tb-btn.logout:hover{background:#FFEBE6;color:#BF2600;border-color:#FFBDAD}
+.edit-banner{background:#FF8B00;color:#fff;font-size:11px;font-weight:600;padding:5px 22px;display:none;align-items:center;gap:8px;flex-shrink:0}
+.edit-banner.show{display:flex}
+.edit-banner span{opacity:.8;font-weight:400}
+
+/* PAGES */
+.page{display:none;max-width:960px;margin:0 auto;padding:28px 36px 60px;width:100%}
+.page.active{display:block}
+.page-title{font-size:26px;font-weight:700;color:#172B4D;margin-bottom:8px;letter-spacing:-.3px}
+.page-meta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #DFE1E6}
+.pm-item{font-size:11px;color:#5E6C84;display:flex;align-items:center;gap:5px}
+.pm-item strong{color:#172B4D}
+.av-sm{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff}
+
+/* INFO PANELS */
+.inf-panel{border-radius:4px;padding:12px 16px;margin-bottom:16px;border-left:4px solid}
+.ip-info{background:#DEEBFF;border-color:#0052CC}.ip-warn{background:#FFF0B3;border-color:#FF8B00}
+.ip-success{background:#E3FCEF;border-color:#00875A}.ip-error{background:#FFEBE6;border-color:#BF2600}
+.ip-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.ip-info .ip-label{color:#0052CC}.ip-warn .ip-label{color:#FF8B00}.ip-success .ip-label{color:#00875A}.ip-error .ip-label{color:#BF2600}
+.inf-panel p,.inf-panel ul,.inf-panel ol{font-size:12px;color:#172B4D;line-height:1.6}
+.inf-panel ul,.inf-panel ol{padding-left:16px;margin-top:3px}
+.inf-panel li{margin-bottom:2px}
+
+/* TYPOGRAPHY */
+h2{font-size:18px;font-weight:700;color:#172B4D;margin:28px 0 10px;padding-bottom:7px;border-bottom:2px solid #0052CC;display:flex;align-items:center;justify-content:space-between;gap:10px}
+h3{font-size:14px;font-weight:700;color:#172B4D;margin:18px 0 6px}
+p{font-size:12px;color:#172B4D;margin-bottom:10px;line-height:1.7}
+ul,ol{padding-left:18px;margin-bottom:10px}
+li{font-size:12px;color:#172B4D;padding:2px 0;line-height:1.6}
+hr{border:none;border-top:1px solid #DFE1E6;margin:22px 0}
+code{font-family:'SFMono-Regular',Consolas,monospace;font-size:10px;background:#F4F5F7;padding:1px 5px;border-radius:3px;color:#BF2600}
+
+/* TABLES */
+.tbl-wrap{overflow-x:auto;margin-bottom:16px;border-radius:4px;border:1px solid #DFE1E6}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#F4F5F7;padding:8px 12px;text-align:left;font-weight:700;color:#5E6C84;font-size:9px;text-transform:uppercase;letter-spacing:.07em;border-bottom:2px solid #DFE1E6;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid #DFE1E6;color:#172B4D;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#F8F9FA}
+.mono{font-family:'SFMono-Regular',Consolas,monospace;font-size:10px;color:#8993A4}
+
+/* TAGS */
+.tag{display:inline-flex;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.tag-blue{background:#DEEBFF;color:#0052CC}.tag-green{background:#E3FCEF;color:#006644}
+.tag-red{background:#FFEBE6;color:#BF2600}.tag-orange{background:#FFF0B3;color:#974F0C}
+.tag-gray{background:#F4F5F7;color:#5E6C84;border:1px solid #DFE1E6}.tag-purple{background:#EAE6FF;color:#403294}
+.tag-teal{background:#E6FCFF;color:#008DA6}
+.lbl{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.lbl::before{content:"";width:5px;height:5px;border-radius:50%}
+.lbl-green{background:#E3FCEF;color:#006644}.lbl-green::before{background:#00875A}
+.lbl-amber{background:#FFF0B3;color:#974F0C}.lbl-amber::before{background:#FF8B00}
+.lbl-red{background:#FFEBE6;color:#BF2600}.lbl-red::before{background:#BF2600}
+.lbl-gray{background:#F4F5F7;color:#5E6C84;border:1px solid #DFE1E6}.lbl-gray::before{background:#97A0AF}
+.lbl-blue{background:#DEEBFF;color:#0052CC}.lbl-blue::before{background:#0052CC}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid #DFE1E6;border-radius:4px;padding:12px 14px;border-top:3px solid}
+.kpi.blue{border-top-color:#0052CC}.kpi.green{border-top-color:#00875A}.kpi.red{border-top-color:#BF2600}
+.kpi.orange{border-top-color:#FF8B00}.kpi.teal{border-top-color:#00B8D9}.kpi.purple{border-top-color:#6554C0}
+.kpi-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#5E6C84;margin-bottom:5px}
+.kpi-val{font-size:26px;font-weight:700;color:#172B4D;line-height:1}
+.kpi-sub{font-size:10px;color:#8993A4;margin-top:3px}
+
+/* ROLE CARDS */
+.role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-bottom:16px}
+.role-card{background:#fff;border:1px solid #DFE1E6;border-radius:4px;overflow:hidden}
+.rc-head{padding:9px 13px;font-size:12px;font-weight:700}
+.rc-body{padding:9px 13px;border-top:1px solid #DFE1E6}
+.rc-perm{display:flex;gap:6px;padding:2px 0;font-size:11px;color:#5E6C84;line-height:1.4}
+.ok{color:#00875A;font-weight:700;flex-shrink:0;font-size:12px}
+.no{color:#BF2600;font-weight:700;flex-shrink:0;font-size:12px}
+
+/* ACCESS MATRIX */
+.matrix-wrap{overflow:auto;max-height:460px;border:1px solid #DFE1E6;border-radius:4px;margin-bottom:16px}
+.mtbl{border-collapse:collapse;font-size:10px;min-width:900px}
+.mtbl th{background:#0052CC;color:#fff;padding:6px 9px;font-size:8px;font-weight:700;text-align:center;border:1px solid rgba(255,255,255,.15);white-space:nowrap;position:sticky;top:0;z-index:2}
+.mtbl th.uc{position:sticky;left:0;z-index:3;text-align:left;background:#0747A6;min-width:155px}
+.mtbl td{padding:5px 8px;text-align:center;border:1px solid #DFE1E6;font-size:12px}
+.mtbl td.uc{position:sticky;left:0;background:#fff;text-align:left;font-weight:600;border-right:2px solid #DFE1E6;font-size:10px}
+.mtbl tr:hover td{background:#F4F5F7}.mtbl tr:hover td.uc{background:#F4F5F7}
+.m-y{background:#E3FCEF;color:#006644}.m-n{background:#FFEBE6;color:#BF2600}
+.m-p{background:#FFF0B3;color:#974F0C}.m-q{background:#FFFAE6;color:#FF8B00}
+.m-r{background:#F4F5F7;color:#8993A4}.m-a{background:#EAE6FF;color:#403294;font-weight:700}
+.leg-wrap{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px;background:#F4F5F7;border-radius:4px;border:1px solid #DFE1E6;margin-bottom:14px}
+.leg-i{display:flex;align-items:center;gap:4px;font-size:10px;color:#5E6C84}
+
+/* PAGE NAV */
+.page-nav{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px}
+.pnb{padding:7px 14px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #DFE1E6;background:#fff;color:#172B4D;transition:all .1s;font-family:'Inter',sans-serif}
+.pnb:hover{background:#DEEBFF;color:#0052CC;border-color:#0052CC}
+
+/* FOOTER */
+.cf-footer{background:#F4F5F7;border:1px solid #DFE1E6;border-radius:4px;padding:14px 18px;margin-top:28px}
+.cf-footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:9px}
+.cf-footer-item{font-size:10px;color:#5E6C84}
+.cf-footer-item strong{color:#172B4D;display:block;margin-bottom:2px}
+
+/* ═══════════════════════════════
+   INLINE EDIT MODE STYLES
+═══════════════════════════════ */
+.edit-mode [contenteditable]{outline:none;border-radius:3px;transition:all .15s;cursor:text}
+.edit-mode [contenteditable]:hover{background:rgba(0,82,204,.05);box-shadow:0 0 0 1.5px rgba(0,82,204,.25)}
+.edit-mode [contenteditable]:focus{background:#fff;box-shadow:0 0 0 2px #0052CC;padding:2px 4px}
+.edit-mode td[contenteditable]:focus{box-shadow:inset 0 0 0 2px #0052CC}
+.edit-mode .page-title[contenteditable]:hover{background:rgba(0,82,204,.04)}
+.editable-hint{font-size:9px;color:#FF8B00;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-left:8px;opacity:0;transition:opacity .2s}
+.edit-mode .editable-hint{opacity:1}
+.section-edit-btn{display:none;align-items:center;gap:5px;padding:4px 11px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid #0052CC;background:#DEEBFF;color:#0052CC;font-family:'Inter',sans-serif;transition:all .15s;flex-shrink:0}
+.section-edit-btn:hover{background:#0052CC;color:#fff}
+.edit-mode .section-edit-btn{display:flex}
+.row-actions{display:none;gap:4px}
+.edit-mode .row-actions{display:flex}
+.row-act-btn{padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600;cursor:pointer;border:1px solid;font-family:'Inter',sans-serif;transition:all .15s}
+.row-act-edit{background:#DEEBFF;color:#0052CC;border-color:#0052CC}.row-act-edit:hover{background:#0052CC;color:#fff}
+.row-act-del{background:#FFEBE6;color:#BF2600;border-color:#BF2600}.row-act-del:hover{background:#BF2600;color:#fff}
+.add-row-btn{display:none;width:100%;padding:9px;background:#F4F5F7;border:2px dashed #DFE1E6;border-radius:0 0 4px 4px;font-size:11px;font-weight:600;color:#5E6C84;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;text-align:center}
+.add-row-btn:hover{background:#DEEBFF;border-color:#0052CC;color:#0052CC}
+.edit-mode .add-row-btn{display:block}
+.edit-mode-indicator{display:none;width:8px;height:8px;border-radius:50%;background:#00875A;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+.edit-mode .edit-mode-indicator{display:inline-block}
+
+/* ═══════════════════════════════
+   MODAL (shared for edit panels)
+═══════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;z-index:500;padding:1rem}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:600px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2);border:1px solid #DFE1E6}
+.modal-hd{padding:16px 20px;border-bottom:1px solid #DFE1E6;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:14px;font-weight:700;color:#172B4D}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#5E6C84;line-height:1;padding:2px 6px;border-radius:4px;font-family:'Inter',sans-serif}
+.modal-close:hover{background:#F4F5F7}
+.modal-body{padding:18px 20px;overflow-y:auto;flex:1}
+.modal-ft{padding:12px 20px;border-top:1px solid #DFE1E6;display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;background:#fafbfc}
+.mf{display:flex;flex-direction:column;gap:.32rem;margin-bottom:.85rem}
+.mf label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E6C84}
+.mf input,.mf select,.mf textarea{font-family:'Inter',sans-serif;font-size:12px;color:#172B4D;background:#F7F9FC;border:1.5px solid #DFE1E6;border-radius:8px;padding:.58rem .78rem;outline:none;width:100%;transition:all .15s}
+.mf input:focus,.mf select:focus,.mf textarea:focus{border-color:#0052CC;background:#fff;box-shadow:0 0 0 3px rgba(0,82,204,.08)}
+.mf textarea{resize:vertical;min-height:60px}
+.mf select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='6' fill='none'%3E%3Cpath d='M1 1l4.5 4 4.5-4' stroke='%230F3053' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center}
+.mf-row{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+.mbtn{padding:7px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:'Inter',sans-serif;transition:all .15s}
+.mbtn-primary{background:#0052CC;color:#fff;border-color:#0052CC}.mbtn-primary:hover{background:#0747A6}
+.mbtn-outline{background:#fff;color:#172B4D;border-color:#DFE1E6}.mbtn-outline:hover{background:#F4F5F7}
+.mbtn-danger{background:#FFEBE6;color:#BF2600;border-color:#FFBDAD}.mbtn-danger:hover{background:#FFC9B8}
+
+/* TOAST */
+.toast-bar{position:fixed;bottom:20px;right:20px;background:#172B4D;color:#fff;padding:10px 16px;border-radius:9px;font-size:12px;font-weight:500;z-index:9999;display:none;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.22);animation:toastIn .22s ease;max-width:320px}
+.toast-bar.show{display:flex}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* PMO FORM STYLES */
+:root{--bp-navy:#0F3053;--bp-navy2:#173E69;--bp-green:#3DB88B;--bp-amber:#F0B63C;--bp-red:#E15D5D;--bp-citron:#EAE753;--bp-deep:#5A97D4;--bp-line:rgba(15,48,83,.10)}
+.pmo-hero{background:linear-gradient(135deg,var(--bp-navy) 0%,var(--bp-navy2) 100%);color:#fff;padding:2rem 2.2rem 2.2rem;border-radius:16px;margin-bottom:1.8rem;position:relative;overflow:hidden}
+.pmo-hero::before{content:'';position:absolute;top:-50%;right:-8%;width:480px;height:480px;background:radial-gradient(circle,rgba(234,231,83,.11) 0%,transparent 62%);pointer-events:none}
+.pmo-hero .eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--bp-citron);margin-bottom:.5rem;font-weight:700}
+.pmo-hero h2{font-size:clamp(1.2rem,2vw,1.7rem);font-weight:300;line-height:1.2;margin-bottom:.45rem;color:#fff;border:none;padding:0;margin-top:0;display:block}
+.pmo-hero h2 .acc{color:var(--bp-citron);font-weight:500}
+.pmo-hero p{color:rgba(255,255,255,.62);font-size:12px;max-width:660px;margin:0}
+.pmo-card{background:#fff;border:1px solid var(--bp-line);border-radius:14px;padding:1.6rem;margin-bottom:1rem}
+.pmo-card-hd{display:flex;align-items:center;gap:.7rem;margin-bottom:1.4rem;padding-bottom:1rem;border-bottom:1px solid var(--bp-line)}
+.pmo-card-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(225,93,93,.12)}
+.pmo-card-hd-text .ct{font-size:13px;font-weight:700;color:var(--bp-navy)}
+.pmo-card-hd-text .cd{font-size:11px;color:var(--bp-navy);opacity:.45;margin-top:.1rem}
+.pmo-sdiv{display:flex;align-items:center;gap:.65rem;margin:1.4rem 0 1rem}
+.pmo-sdiv span{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--bp-navy);opacity:.38;white-space:nowrap}
+.pmo-sdiv::before,.pmo-sdiv::after{content:'';flex:1;height:1px;background:var(--bp-line)}
+.pmo-g2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+.pmo-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:660px){.pmo-g2,.pmo-g3{grid-template-columns:1fr}}
+.pf{display:flex;flex-direction:column;gap:.36rem;margin-bottom:.9rem}
+.pf:last-child{margin-bottom:0}
+.pf label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--bp-navy);opacity:.65}
+.pf label .req{color:var(--bp-red);margin-left:2px}
+.pf input,.pf select,.pf textarea{font-family:'Inter',sans-serif;font-size:12px;color:#2C2C2C;background:#fff;border:1.5px solid var(--bp-line);border-radius:9px;padding:.6rem .82rem;transition:all .18s;outline:none;width:100%}
+.pf input:focus,.pf select:focus,.pf textarea:focus{border-color:var(--bp-deep);box-shadow:0 0 0 3px rgba(90,151,212,.11)}
+.pf input::placeholder,.pf textarea::placeholder{color:rgba(15,48,83,.28)}
+.pf textarea{resize:vertical;min-height:80px}
+.pf select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='6' fill='none'%3E%3Cpath d='M1 1l4.5 4 4.5-4' stroke='%230F3053' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .8rem center}
+.pmo-rg,.pmo-cg{display:flex;flex-wrap:wrap;gap:.42rem;margin-top:.2rem}
+.pmo-ro,.pmo-co{display:flex;align-items:center;gap:.42rem;padding:.38rem .8rem;border:1.5px solid var(--bp-line);border-radius:100px;cursor:pointer;transition:all .16s;font-size:11px;color:var(--bp-navy);font-weight:500;user-select:none}
+.pmo-ro:hover,.pmo-co:hover{border-color:var(--bp-deep);background:rgba(90,151,212,.05)}
+.pmo-ro input,.pmo-co input{width:13px;height:13px;accent-color:var(--bp-green);cursor:pointer;flex-shrink:0}
+.pmo-ro.sel,.pmo-co.sel{border-color:var(--bp-green);background:rgba(61,184,139,.08)}
+.pmo-rl{font-size:10px;color:var(--bp-navy);opacity:.4;margin-bottom:1.4rem}
+.pmo-rl span{color:var(--bp-red)}
+.pmo-actions{display:flex;align-items:center;gap:.85rem;margin-top:1.8rem;flex-wrap:wrap}
+.pmo-btn{display:inline-flex;align-items:center;gap:.55rem;background:var(--bp-navy);color:#fff;border:none;border-radius:10px;padding:.76rem 1.6rem;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+.pmo-btn:hover{background:var(--bp-navy2);transform:translateY(-1px)}
+.pmo-btn .arr{transition:transform .2s}.pmo-btn:hover .arr{transform:translateX(4px)}
+.pmo-ghost{display:inline-flex;align-items:center;gap:.5rem;background:transparent;color:var(--bp-navy);border:1.5px solid var(--bp-line);border-radius:10px;padding:.7rem 1.3rem;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .18s}
+.pmo-ghost:hover{border-color:var(--bp-deep);background:rgba(90,151,212,.05)}
+
+/* LIVE SHEET */
+.sheet-wrap{background:#fff;border:1px solid #DFE1E6;border-radius:12px;overflow:hidden;margin-top:2rem}
+.sheet-hd{background:#0F3053;color:#fff;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.sheet-hd-title{font-size:13px;font-weight:700}
+.sheet-hd-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:1px}
+.sheet-count{background:rgba(61,184,139,.25);color:#3DB88B;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px}
+.sheet-export-btn{padding:6px 13px;background:#EAE753;color:#0F3053;border:none;border-radius:7px;font-family:'Inter',sans-serif;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+.sheet-export-btn:hover{background:#d4d044}
+.sheet-tbl-wrap{overflow-x:auto;max-height:400px;overflow-y:auto}
+.sheet-tbl{width:100%;border-collapse:collapse;font-size:11px;min-width:900px}
+.sheet-tbl thead th{background:#F4F5F7;padding:8px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#5E6C84;border-bottom:2px solid #DFE1E6;position:sticky;top:0;white-space:nowrap}
+.sheet-tbl tbody td{padding:8px 12px;border-bottom:1px solid #DFE1E6;color:#172B4D;vertical-align:middle}
+.sheet-tbl tbody tr:last-child td{border-bottom:none}
+.sheet-tbl tbody tr:hover td{background:#F4F5F7}
+.sheet-tbl tbody tr.new-row{animation:rowIn .35s ease}
+@keyframes rowIn{from{background:#E3FCEF}to{background:transparent}}
+.sheet-empty{text-align:center;padding:3rem 1rem;color:#5E6C84}
+.sheet-empty .sei{font-size:2rem;margin-bottom:.6rem}
+.sheet-empty p{font-size:12px;font-weight:500;line-height:1.6}
+.req-type-tag{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.rt-new{background:rgba(61,184,139,.12);color:#1a7a5c}.rt-mod{background:rgba(90,151,212,.12);color:#2D6FA8}
+.rt-rev{background:rgba(225,93,93,.11);color:#C04040}.rt-tmp{background:rgba(240,182,60,.14);color:#8B6513}
+.rt-role{background:rgba(15,48,83,.08);color:#0F3053}
+.status-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.status-tag::before{content:'';width:5px;height:5px;border-radius:50%}
+.st-pending{background:#FFF0B3;color:#974F0C}.st-pending::before{background:#FF8B00}
+
+/* TOAST PMO */
+.pmo-toast{position:fixed;bottom:20px;right:20px;background:var(--bp-navy);color:#fff;padding:.9rem 1.3rem;border-radius:12px;font-size:12px;display:none;align-items:center;gap:.7rem;box-shadow:0 8px 32px rgba(15,48,83,.3);z-index:9999;max-width:340px;animation:toastIn .28s ease}
+.pmo-toast.show{display:flex}
+.pmo-toast .tt{font-weight:700;font-size:11px;color:var(--bp-citron);margin-bottom:2px}
+.pmo-toast .tb{opacity:.7;font-size:10px;line-height:1.4}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="lb-brand">
+      <div class="lb-icon">🔐</div>
+      <div><div class="lb-name">BombParty</div><div class="lb-sub">System Access Registry</div></div>
+    </div>
+    <div class="lb-title">Secure Admin Access</div>
+    <div class="lb-desc">Restricted to authorized administrators. All access attempts are monitored.</div>
+    <div class="lf"><label>Username</label><input type="text" id="loginUser" placeholder="Enter username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <div class="lf">
+      <label>Password</label>
+      <div style="position:relative">
+        <input type="password" id="loginPass" placeholder="••••••••••••" autocomplete="current-password" style="width:100%;padding-right:3rem" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <button type="button" id="showPassBtn" onclick="toggleShowPass()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#5E6C84;padding:0;line-height:1">👁</button>
+      </div>
+    </div>
+    <button class="lb-btn" onclick="doLogin()">Sign In →</button>
+    <div class="lb-err" id="loginErr">Invalid username or password. Access denied.</div>
+    <div class="lb-note">🔒 Unauthorized access attempts are logged and escalated to IT Security.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appShell" style="display:none">
+
+  <!-- SIDEBAR -->
+  <div class="lnav">
+    <div class="lnav-body">
+      <div class="lnav-sec">IT &amp; Security</div>
+      <button class="lnav-item active" onclick="showPage('home')">🔐 System Access Registry</button>
+      <button class="lnav-sub" onclick="showPage('overview')">📊 Overview &amp; KPIs</button>
+      <button class="lnav-sub" onclick="showPage('users')">👤 User Registry</button>
+      <button class="lnav-sub" onclick="showPage('systems')">🖥 System Inventory</button>
+      <button class="lnav-sub" onclick="showPage('matrix')">📋 Access Matrix</button>
+      <button class="lnav-sub" onclick="showPage('requests')">📝 Access Requests</button>
+      <button class="lnav-sub" onclick="showPage('roles')">📜 Role Definitions</button>
+      <button class="lnav-sub" onclick="showPage('policies')">⚙️ Governance &amp; Policies</button>
+    </div>
+    <div class="lnav-footer">
+      <button class="lnav-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- TOPBAR -->
+    <div class="topbar" id="topbar">
+      <div class="bc">
+        <a onclick="showPage('home')">BombParty</a> /
+        <a onclick="showPage('home')">IT &amp; Security</a> /
+        <span id="bc-current">System Access Registry</span>
+      </div>
+      <div class="tb-right">
+        <div class="edit-mode-indicator" id="editDot"></div>
+        <button class="tb-btn" id="editToggleBtn" onclick="toggleEditMode()" title="Toggle inline edit mode">
+          ✎ Edit Mode
+        </button>
+        <div class="tb-user">
+          <div class="tb-av" id="tbAv">DP</div>
+          <span id="tbName">DPBombParty</span>
+        </div>
+        <button class="tb-btn logout" onclick="doLogout()">Sign Out</button>
+      </div>
+    </div>
+
+    <!-- EDIT BANNER -->
+    <div class="edit-banner" id="editBanner">
+      <span>✎</span>
+      <strong>Edit Mode Active</strong>
+      <span>— Click any text or cell to edit it inline. Use section Edit buttons to add or remove rows. Changes save automatically.</span>
+    </div>
+
+    <!-- ══ PAGE: HOME ══ -->
+    <div class="page active" id="page-home">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:6px">
+        <h1 class="page-title" data-ek="home-title" contenteditable="false">🔐 System Access Registry</h1>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:6px">
+          <span class="tag tag-red">🔒 Restricted</span><span class="tag tag-blue">📋 IAM</span>
+          <span class="tag tag-green">✅ Active</span><span class="tag tag-purple">Admin Only</span>
+        </div>
+      </div>
+      <div class="page-meta" id="home-meta">
+        <div class="pm-item"><strong>Owner:</strong> <span class="av-sm" style="background:#0052CC">DF</span> <span data-ek="meta-owner" contenteditable="false">Douglas Fernandes &amp; Alan Argollo</span></div>
+        <div class="pm-item"><strong>Created:</strong> <span data-ek="meta-created" contenteditable="false">April 28, 2026</span></div>
+        <div class="pm-item"><strong>Last Updated:</strong> <span data-ek="meta-updated" contenteditable="false">April 28, 2026</span></div>
+        <div class="pm-item"><strong>Review Cycle:</strong> <span data-ek="meta-cycle" contenteditable="false">Quarterly</span></div>
+        <div class="pm-item"><strong>Classification:</strong> <span data-ek="meta-class" contenteditable="false" style="color:#BF2600;font-weight:700">INTERNAL — CONTROLLED</span></div>
+      </div>
+      <div class="inf-panel ip-warn">
+        <div class="ip-label">⚠️ Access Control Notice</div>
+        <p data-ek="home-notice" contenteditable="false">This space contains privileged IAM data. Distribution is restricted to authorized administrators only. Unauthorized access attempts are logged and escalated to IT Security.</p>
+      </div>
+      <h2><span data-ek="home-h1" contenteditable="false">📌 About This Space</span><span class="editable-hint">✎ Click to edit</span></h2>
+      <p data-ek="home-about" contenteditable="false">The <strong>BombParty System Access Registry</strong> is the organization's centralized Identity and Access Management (IAM) reference. It tracks all users, systems, access grants, and privilege levels across the full technology stack — SaaS platforms, cloud infrastructure, internal tooling, and development environments.</p>
+      <h2><span data-ek="home-h2" contenteditable="false">📂 Space Navigation</span></h2>
+      <div class="page-nav">
+        <button class="pnb" onclick="showPage('overview')">📊 Overview &amp; KPIs</button>
+        <button class="pnb" onclick="showPage('users')">👤 User Registry</button>
+        <button class="pnb" onclick="showPage('systems')">🖥 System Inventory</button>
+        <button class="pnb" onclick="showPage('matrix')">📋 Access Matrix</button>
+        <button class="pnb" onclick="showPage('requests')">📝 Access Requests</button>
+        <button class="pnb" onclick="showPage('roles')">📜 Role Definitions</button>
+        <button class="pnb" onclick="showPage('policies')">⚙️ Governance &amp; Policies</button>
+      </div>
+      <h2><span>👥 Registry Administrators</span></h2>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Added</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Douglas Fernandes</strong></td><td><code>douglasf@bombparty.com</code></td><td><span class="tag tag-blue">Super Admin</span></td><td>April 28, 2026</td><td><span class="lbl lbl-green">Active</span></td></tr>
+          <tr><td><strong>Alan Argollo</strong></td><td><code>alan@bombparty.com</code></td><td><span class="tag tag-blue">Super Admin</span></td><td>April 28, 2026</td><td><span class="lbl lbl-green">Active</span></td></tr>
+          <tr><td><strong>Kristin — Admin</strong></td><td><code>kristin@bombparty.com</code></td><td><span class="tag tag-purple">Admin</span></td><td>April 28, 2026</td><td><span class="lbl lbl-green">Active</span></td></tr>
+        </tbody>
+      </table></div>
+      <div class="cf-footer">
+        <div class="cf-footer-grid">
+          <div class="cf-footer-item"><strong>Space Owner</strong><span data-ek="footer-owner" contenteditable="false">Douglas Fernandes &amp; Alan Argollo</span></div>
+          <div class="cf-footer-item"><strong>Classification</strong><span data-ek="footer-class" contenteditable="false" style="color:#BF2600;font-weight:700">INTERNAL — CONTROLLED</span></div>
+          <div class="cf-footer-item"><strong>Review Cycle</strong><span data-ek="footer-cycle" contenteditable="false">Quarterly — Next: July 1, 2026</span></div>
+          <div class="cf-footer-item"><strong>Created</strong><span data-ek="footer-created" contenteditable="false">April 28, 2026</span></div>
+          <div class="cf-footer-item"><strong>Last Modified</strong><span data-ek="footer-modified" contenteditable="false">April 28, 2026</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: OVERVIEW ══ -->
+    <div class="page" id="page-overview">
+      <h1 class="page-title" data-ek="ov-title" contenteditable="false">📊 Overview &amp; KPIs</h1>
+      <div class="page-meta">
+        <div class="pm-item"><strong>Parent:</strong> System Access Registry</div>
+        <div class="pm-item"><strong>Owner:</strong> Douglas Fernandes &amp; Alan Argollo</div>
+        <div class="pm-item"><strong>Last Updated:</strong> <span data-ek="ov-updated" contenteditable="false">April 28, 2026</span></div>
+      </div>
+      <h2><span data-ek="ov-h1" contenteditable="false">📈 Current Registry Metrics</span><span class="editable-hint">✎ Click to edit</span></h2>
+      <div class="kpi-row">
+        <div class="kpi blue"><div class="kpi-label">Total Users</div><div class="kpi-val" data-ek="kpi-total" contenteditable="false">16</div><div class="kpi-sub">All personnel</div></div>
+        <div class="kpi green"><div class="kpi-label">Active Accounts</div><div class="kpi-val" data-ek="kpi-active" contenteditable="false">12</div><div class="kpi-sub">Provisioned</div></div>
+        <div class="kpi red"><div class="kpi-label">Revoked</div><div class="kpi-val" data-ek="kpi-revoked" contenteditable="false">1</div><div class="kpi-sub">Deprovisioned</div></div>
+        <div class="kpi orange"><div class="kpi-label">Pending Review</div><div class="kpi-val" data-ek="kpi-pending" contenteditable="false">3</div><div class="kpi-sub">Awaiting action</div></div>
+        <div class="kpi teal"><div class="kpi-label">Systems Tracked</div><div class="kpi-val" data-ek="kpi-systems" contenteditable="false">12</div><div class="kpi-sub">All environments</div></div>
+        <div class="kpi purple"><div class="kpi-label">Privileged Accounts</div><div class="kpi-val" data-ek="kpi-priv" contenteditable="false">5</div><div class="kpi-sub">Admin &amp; above</div></div>
+      </div>
+      <h2><span data-ek="ov-h2" contenteditable="false">🏥 Access Health Summary</span><span class="editable-hint">✎ Click to edit</span></h2>
+      <div class="tbl-wrap"><table id="healthTable">
+        <thead><tr><th>Metric</th><th>Value</th><th>Target</th><th>Status</th><th class="edit-mode" style="display:none">Actions</th></tr></thead>
+        <tbody id="healthBody"></tbody>
+      </table></div>
+      <button class="add-row-btn" onclick="addHealthRow()">+ Add Health Metric</button>
+      <h2><span data-ek="ov-h3" contenteditable="false">📅 Review Schedule</span><span class="editable-hint">✎ Click to edit</span></h2>
+      <div class="tbl-wrap"><table id="schedTable">
+        <thead><tr><th>Quarter</th><th>Period</th><th>Due Date</th><th>Lead</th><th>Status</th><th class="edit-mode" style="display:none">Actions</th></tr></thead>
+        <tbody id="schedBody"></tbody>
+      </table></div>
+      <button class="add-row-btn" onclick="addSchedRow()">+ Add Review Cycle</button>
+    </div>
+
+    <!-- ══ PAGE: USER REGISTRY ══ -->
+    <div class="page" id="page-users">
+      <h1 class="page-title" data-ek="ur-title" contenteditable="false">👤 User Registry</h1>
+      <div class="page-meta">
+        <div class="pm-item"><strong>Parent:</strong> System Access Registry</div>
+        <div class="pm-item"><strong>Classification:</strong> <span data-ek="ur-class" contenteditable="false" style="color:#BF2600;font-weight:700">INTERNAL — CONTROLLED</span></div>
+      </div>
+      <div class="inf-panel ip-warn">
+        <div class="ip-label">⚠️ Data Sensitivity</div>
+        <p data-ek="ur-notice" contenteditable="false">Contains PII and access control data. Do not share externally. Access limited to IT Security, HR, and authorized administrators.</p>
+      </div>
+      <h2>
+        <span data-ek="ur-h1" contenteditable="false">👤 All Users</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="editable-hint">✎ Click cells to edit</span>
+          <button class="section-edit-btn" onclick="openModal('userModal')">✎ Add / Edit Users</button>
+        </div>
+      </h2>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>ID</th><th>Full Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Title</th><th>Status</th><th>Clearance</th><th>MFA</th><th>VPN</th><th>Start</th><th>Next Review</th><th id="userActHdr" style="display:none">Actions</th></tr></thead>
+        <tbody id="userTableBody"></tbody>
+      </table></div>
+      <button class="add-row-btn" onclick="openAddUser()">+ Add New User</button>
+    </div>
+
+    <!-- ══ PAGE: SYSTEM INVENTORY ══ -->
+    <div class="page" id="page-systems">
+      <h1 class="page-title" data-ek="si-title" contenteditable="false">🖥 System Inventory</h1>
+      <div class="page-meta">
+        <div class="pm-item"><strong>Parent:</strong> System Access Registry</div>
+        <div class="pm-item"><strong>Last Updated:</strong> <span data-ek="si-updated" contenteditable="false">April 28, 2026</span></div>
+      </div>
+      <h2>
+        <span data-ek="si-h1" contenteditable="false">🖥 All Systems</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="editable-hint">✎ Click cells to edit</span>
+          <button class="section-edit-btn" onclick="openAddSystem()">✎ Add / Edit Systems</button>
+        </div>
+      </h2>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>ID</th><th>System Name</th><th>Type</th><th>Category</th><th>Env</th><th>Owner</th><th>IT Admin</th><th>Criticality</th><th>Data Class</th><th id="sysActHdr" style="display:none">Actions</th></tr></thead>
+        <tbody id="sysTableBody"></tbody>
+      </table></div>
+      <button class="add-row-btn" onclick="openAddSystem()">+ Add New System</button>
+    </div>
+
+    <!-- ══ PAGE: ACCESS MATRIX ══ -->
+    <div class="page" id="page-matrix">
+      <h1 class="page-title">📋 Access Matrix</h1>
+      <div class="page-meta">
+        <div class="pm-item"><strong>Parent:</strong> System Access Registry</div>
+        <div class="pm-item"><strong>Note:</strong> Click any cell to cycle its access status</div>
+      </div>
+      <div class="leg-wrap">
+        <div class="leg-i"><span style="font-size:13px">✅</span> Full Access</div>
+        <div class="leg-i"><span style="font-size:13px">🛡</span> Admin</div>
+        <div class="leg-i"><span style="font-size:13px">⚠️</span> Partial</div>
+        <div class="leg-i"><span style="font-size:13px">⏳</span> Pending</div>
+        <div class="leg-i"><span style="font-size:13px">🚫</span> No Access</div>
+        <div class="leg-i"><span style="font-size:13px">🔒</span> Revoked</div>
+      </div>
+      <div class="matrix-wrap"><table class="mtbl" id="matrixTable">
+        <thead id="matrixHead"></thead>
+        <tbody id="matrixBody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- ══ PAGE: ACCESS REQUESTS ══ -->
+    <div class="page" id="page-requests">
+      <h1 class="page-title" data-ek="ar-title" contenteditable="false">📝 Access Requests</h1>
+      <div class="page-meta">
+        <div class="pm-item"><strong>Parent:</strong> System Access Registry</div>
+        <div class="pm-item"><strong>Owner:</strong> Douglas Fernandes &amp; Alan Argollo</div>
+      </div>
+      <div class="pmo-hero">
+        <div class="eyebrow">System User Access</div>
+        <h2>Request, Modify, or <span class="acc">Revoke</span> System Access</h2>
+        <p>Use this form to provision new users, update existing access levels, or offboard team members. All submissions log instantly in the registry below.</p>
+      </div>
+      <p class="pmo-rl"><span>*</span> Required fields</p>
+      <div class="pmo-card">
+        <div class="pmo-card-hd">
+          <div class="pmo-card-ico">🔐</div>
+          <div class="pmo-card-hd-text"><div class="ct">Access Request Details</div><div class="cd">New access, modification, or revocation</div></div>
+        </div>
+        <div class="pf"><label>Request Type <span class="req">*</span></label>
+          <div class="pmo-rg" id="ua_req_type">
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="New User Provisioning"/> 🆕 New User Provisioning</label>
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="Access Modification"/> ✏️ Access Modification</label>
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="Access Revocation"/> ❌ Access Revocation</label>
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="Temporary Access"/> ⏳ Temporary Access</label>
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="Role / Permission Change"/> 🔄 Role / Permission Change</label>
+          </div>
+        </div>
+        <div class="pmo-sdiv"><span>Requestor Info</span></div>
+        <div class="pmo-g2">
+          <div class="pf"><label>Requestor Name <span class="req">*</span></label><input id="ua_rname" placeholder="Full name"/></div>
+          <div class="pf"><label>Requestor Email <span class="req">*</span></label><input type="email" id="ua_remail" placeholder="you@bombparty.com"/></div>
+        </div>
+        <div class="pmo-sdiv"><span>User Being Provisioned</span></div>
+        <div class="pmo-g3">
+          <div class="pf"><label>First Name <span class="req">*</span></label><input id="ua_fname" placeholder="First name"/></div>
+          <div class="pf"><label>Last Name <span class="req">*</span></label><input id="ua_lname" placeholder="Last name"/></div>
+          <div class="pf"><label>Work Email <span class="req">*</span></label><input type="email" id="ua_email" placeholder="user@bombparty.com"/></div>
+        </div>
+        <div class="pmo-g3">
+          <div class="pf"><label>Job Title <span class="req">*</span></label><input id="ua_title" placeholder="e.g. Senior Engineer"/></div>
+          <div class="pf"><label>Department <span class="req">*</span></label>
+            <select id="ua_dept"><option value="">Select</option><option>Product</option><option>Engineering</option><option>Design</option><option>Marketing</option><option>Operations</option><option>Finance</option><option>Legal / Compliance</option><option>HR / People</option><option>Executive</option><option>Contractor / External</option></select>
+          </div>
+          <div class="pf"><label>Direct Manager <span class="req">*</span></label><input id="ua_manager" placeholder="Manager's full name"/></div>
+        </div>
+        <div class="pmo-g2">
+          <div class="pf"><label>Employment Type <span class="req">*</span></label>
+            <div class="pmo-rg" id="ua_emp">
+              <label class="pmo-ro" onclick="selR('ua_emp',this)"><input type="radio" name="ua_emp" value="Full-time"/> Full-time</label>
+              <label class="pmo-ro" onclick="selR('ua_emp',this)"><input type="radio" name="ua_emp" value="Part-time"/> Part-time</label>
+              <label class="pmo-ro" onclick="selR('ua_emp',this)"><input type="radio" name="ua_emp" value="Contractor"/> Contractor</label>
+              <label class="pmo-ro" onclick="selR('ua_emp',this)"><input type="radio" name="ua_emp" value="Vendor"/> Vendor</label>
+              <label class="pmo-ro" onclick="selR('ua_emp',this)"><input type="radio" name="ua_emp" value="Intern"/> Intern</label>
+            </div>
+          </div>
+          <div class="pf"><label>Access Level</label>
+            <select id="ua_access_level"><option value="">Select</option><option>Read Only</option><option>Read / Write (Standard)</option><option>Elevated / Power User</option><option>Admin</option><option>Super Admin</option><option>Custom (see notes)</option></select>
+          </div>
+        </div>
+        <div class="pmo-sdiv"><span>Systems &amp; Applications</span></div>
+        <div class="pf"><label>Systems to Provision <span class="req">*</span></label>
+          <div class="pmo-cg" id="ua_systems">
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Google Workspace"/> 📧 Google Workspace</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Slack"/> 💬 Slack</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Jira"/> 🎯 Jira</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Confluence"/> 📖 Confluence</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="GitHub"/> 🐙 GitHub</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="AWS"/> ☁️ AWS</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Figma"/> 🎨 Figma</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Admin Dashboard"/> ⚙️ Admin Dashboard</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Billing System"/> 💳 Billing System</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="CRM / Salesforce"/> 🏢 CRM / Salesforce</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Analytics Platform"/> 📈 Analytics Platform</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="VPN"/> 🔒 VPN</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="1Password"/> 🔑 1Password</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="HR System"/> 👥 HR System</label>
+          </div>
+        </div>
+        <div class="pf"><label>Other Systems</label><input id="ua_other_sys" placeholder="Any additional systems..."/></div>
+        <div class="pmo-sdiv"><span>Timeline &amp; Approvals</span></div>
+        <div class="pmo-g3">
+          <div class="pf"><label>Access Start Date <span class="req">*</span></label><input type="date" id="ua_start"/></div>
+          <div class="pf"><label>Access End Date (if temporary)</label><input type="date" id="ua_end"/></div>
+          <div class="pf"><label>Urgency</label>
+            <select id="ua_urgency"><option value="">Select</option><option>Standard (3–5 business days)</option><option>Expedited (1–2 business days)</option><option>Urgent (same day)</option></select>
+          </div>
+        </div>
+        <div class="pf"><label>Business Justification <span class="req">*</span></label><textarea id="ua_justification" placeholder="Why does this user need this access?"></textarea></div>
+        <div class="pf"><label>Manager Approval Status <span class="req">*</span></label>
+          <div class="pmo-rg" id="ua_approval">
+            <label class="pmo-ro" onclick="selR('ua_approval',this)"><input type="radio" name="ua_approval" value="Approved by Manager"/> ✅ Approved by Manager</label>
+            <label class="pmo-ro" onclick="selR('ua_approval',this)"><input type="radio" name="ua_approval" value="Pending Manager Approval"/> ⏳ Pending Manager Approval</label>
+            <label class="pmo-ro" onclick="selR('ua_approval',this)"><input type="radio" name="ua_approval" value="Executive Approval Required"/> 🔒 Executive Approval Required</label>
+          </div>
+        </div>
+        <div class="pf"><label>Additional Notes</label><textarea id="ua_notes" style="min-height:68px" placeholder="Special instructions, compliance notes..."></textarea></div>
+        <div class="pmo-actions">
+          <button class="pmo-btn" onclick="submitAccessRequest()">Submit Access Request <span class="arr">→</span></button>
+          <button class="pmo-ghost" onclick="clearRequestForm()">Clear Form</button>
+        </div>
+      </div>
+      <div class="sheet-wrap">
+        <div class="sheet-hd">
+          <div>
+            <div class="sheet-hd-title">📊 Access Request Registry</div>
+            <div class="sheet-hd-sub">Updates live after every submission</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="sheet-count" id="reqCount">0 entries</span>
+            <button class="sheet-export-btn" onclick="exportRequests()">⬇ Export Excel</button>
+          </div>
+        </div>
+        <div class="sheet-tbl-wrap">
+          <table class="sheet-tbl">
+            <thead><tr><th>#</th><th>Submitted</th><th>Type</th><th>User</th><th>Email</th><th>Dept</th><th>Title</th><th>Employment</th><th>Access Level</th><th>Systems</th><th>Start</th><th>End</th><th>Urgency</th><th>Approval</th><th>Requestor</th><th>Justification</th><th>Status</th></tr></thead>
+            <tbody id="reqTableBody">
+              <tr><td colspan="17"><div class="sheet-empty"><div class="sei">📋</div><p>No requests yet.<br>Complete the form above to log a request.</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: ROLES ══ -->
+    <div class="page" id="page-roles">
+      <h1 class="page-title" data-ek="rl-title" contenteditable="false">📜 Role Definitions</h1>
+      <div class="page-meta"><div class="pm-item"><strong>Parent:</strong> System Access Registry</div></div>
+      <h2><span data-ek="rl-h1" contenteditable="false">🎭 Role Summary</span><span class="editable-hint">✎ Click to edit</span></h2>
+      <div class="tbl-wrap"><table><thead><tr><th>Role</th><th>Count</th><th>Access Level</th><th>MFA</th><th>VPN</th><th>Review</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-purple">Super Admin</span></td><td contenteditable="false" data-ek="r1-count">2</td><td contenteditable="false" data-ek="r1-access">Full — all systems, all environments</td><td style="color:#006644;font-weight:700">Yes</td><td style="color:#006644;font-weight:700">Yes</td><td contenteditable="false" data-ek="r1-review">Monthly</td></tr>
+          <tr><td><span class="tag tag-blue">Admin</span></td><td contenteditable="false" data-ek="r2-count">4</td><td contenteditable="false" data-ek="r2-access">Elevated — assigned systems + infra</td><td style="color:#006644;font-weight:700">Yes</td><td style="color:#006644;font-weight:700">Yes</td><td contenteditable="false" data-ek="r2-review">Quarterly</td></tr>
+          <tr><td><span class="tag tag-teal">Developer</span></td><td contenteditable="false" data-ek="r3-count">3</td><td contenteditable="false" data-ek="r3-access">Dev scope — source control, CI/CD, sandbox</td><td style="color:#006644;font-weight:700">Yes</td><td style="color:#006644;font-weight:700">Yes</td><td contenteditable="false" data-ek="r3-review">Quarterly</td></tr>
+          <tr><td><span class="tag tag-gray">Standard User</span></td><td contenteditable="false" data-ek="r4-count">6</td><td contenteditable="false" data-ek="r4-access">Business apps — role-appropriate only</td><td style="color:#006644;font-weight:700">Yes</td><td style="color:#BF2600;font-weight:700">No (unless approved)</td><td contenteditable="false" data-ek="r4-review">Quarterly</td></tr>
+          <tr><td><span class="tag tag-orange">Vendor</span></td><td contenteditable="false" data-ek="r5-count">1</td><td contenteditable="false" data-ek="r5-access">Limited — specific systems, time-bounded</td><td style="color:#006644;font-weight:700">Yes</td><td style="color:#BF2600;font-weight:700">No</td><td contenteditable="false" data-ek="r5-review">Per engagement</td></tr>
+        </tbody>
+      </table></div>
+      <h2><span data-ek="rl-h2" contenteditable="false">🔐 Role Permission Details</span><span class="editable-hint">✎ Click to edit</span></h2>
+      <div class="role-grid">
+        <div class="role-card"><div class="rc-head" style="background:#EAE6FF;color:#403294">🛡 Super Admin</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="sa-p1">Full access — all systems and environments</span></div><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="sa-p2">User provisioning and deprovisioning</span></div><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="sa-p3">Security policy enforcement and override</span></div><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="sa-p4">Emergency break-glass protocol</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:#DEEBFF;color:#0052CC">🔧 Admin</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="ad-p1">Manage assigned systems and users</span></div><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="ad-p2">Access staging and production environments</span></div><div class="rc-perm"><span class="no">✗</span><span contenteditable="false" data-ek="ad-p3">Cannot override IT Security controls</span></div><div class="rc-perm"><span class="no">✗</span><span contenteditable="false" data-ek="ad-p4">No cross-department system access</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:#E6FCFF;color:#008DA6">💻 Developer</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="dev-p1">Source control read/write</span></div><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="dev-p2">Dev, staging, sandbox environments</span></div><div class="rc-perm"><span class="no">✗</span><span contenteditable="false" data-ek="dev-p3">No HR or payroll system access</span></div><div class="rc-perm"><span class="no">✗</span><span contenteditable="false" data-ek="dev-p4">No financial system write access</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:#F4F5F7;color:#172B4D">👤 Standard User</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="std-p1">Assigned business applications only</span></div><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="std-p2">SharePoint / M365 collaboration</span></div><div class="rc-perm"><span class="no">✗</span><span contenteditable="false" data-ek="std-p3">No infrastructure or admin console access</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:#FFF0B3;color:#974F0C">🔗 Vendor</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="ven-p1">Time-limited access per SOW</span></div><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="ven-p2">Specific approved systems only</span></div><div class="rc-perm"><span class="no">✗</span><span contenteditable="false" data-ek="ven-p3">No clearance-gated system access</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:#E3FCEF;color:#006644">📊 Read-Only / Auditor</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="ro-p1">View-only on assigned systems</span></div><div class="rc-perm"><span class="ok">✓</span><span contenteditable="false" data-ek="ro-p2">Compliance reporting tool access</span></div><div class="rc-perm"><span class="no">✗</span><span contenteditable="false" data-ek="ro-p3">No write access — anywhere</span></div></div></div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: POLICIES ══ -->
+    <div class="page" id="page-policies">
+      <h1 class="page-title" data-ek="po-title" contenteditable="false">⚙️ Governance &amp; Policies</h1>
+      <div class="page-meta"><div class="pm-item"><strong>Parent:</strong> System Access Registry</div><div class="pm-item"><strong>Review Cycle:</strong> <span data-ek="po-cycle" contenteditable="false">Quarterly</span></div></div>
+      <div class="inf-panel ip-error"><div class="ip-label">🔒 Policy Compliance</div><p data-ek="po-notice" contenteditable="false">These policies are mandatory for all BombParty personnel. Non-compliance must be escalated to IT Security and HR. Violations may result in immediate access revocation and disciplinary action.</p></div>
+      <h2><span data-ek="po-h1" contenteditable="false">📋 Access Request Process</span><span class="editable-hint">✎ Click to edit</span></h2>
+      <ol id="policyList">
+        <li contenteditable="false" data-ek="po-l1">Requestor submits via the <strong>Access Requests</strong> page in this registry.</li>
+        <li contenteditable="false" data-ek="po-l2">Direct manager is auto-notified for initial approval within <strong>2 business days</strong>.</li>
+        <li contenteditable="false" data-ek="po-l3">System owner reviews and approves or denies within <strong>2 business days</strong>.</li>
+        <li contenteditable="false" data-ek="po-l4">IT Security must co-approve all Admin-level and above requests.</li>
+        <li contenteditable="false" data-ek="po-l5">Provisioning is completed within <strong>3 business days</strong> of all approvals.</li>
+        <li contenteditable="false" data-ek="po-l6">Access grant is logged in the registry and access matrix updated same-day.</li>
+      </ol>
+      <h2><span data-ek="po-h2" contenteditable="false">🚪 Offboarding &amp; Deprovisioning</span><span class="editable-hint">✎ Click to edit</span></h2>
+      <div class="inf-panel ip-success"><div class="ip-label">✅ SLA: 4 Hours</div><p data-ek="po-sla" contenteditable="false">All departing employee access must be revoked within <strong>4 hours</strong> of official departure. HR submits the ticket; IT Security executes.</p></div>
+      <h2><span data-ek="po-h3" contenteditable="false">🔐 MFA &amp; Authentication Standards</span><span class="editable-hint">✎ Click to edit</span></h2>
+      <div class="tbl-wrap"><table><thead><tr><th>Role</th><th>Required MFA Type</th><th>Remediation Window</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-purple">Super Admin</span></td><td contenteditable="false" data-ek="mfa-sa">Hardware token or FIDO2 (YubiKey preferred)</td><td contenteditable="false" data-ek="mfa-sa-t">Immediate</td></tr>
+          <tr><td><span class="tag tag-blue">Admin</span></td><td contenteditable="false" data-ek="mfa-ad">Hardware token or FIDO2</td><td contenteditable="false" data-ek="mfa-ad-t">24 hours</td></tr>
+          <tr><td><span class="tag tag-teal">Developer</span></td><td contenteditable="false" data-ek="mfa-dev">TOTP app or FIDO2</td><td contenteditable="false" data-ek="mfa-dev-t">5 business days</td></tr>
+          <tr><td><span class="tag tag-gray">Standard User</span></td><td contenteditable="false" data-ek="mfa-std">TOTP app (Authenticator)</td><td contenteditable="false" data-ek="mfa-std-t">5 business days</td></tr>
+          <tr><td><span class="tag tag-orange">Vendor</span></td><td contenteditable="false" data-ek="mfa-ven">TOTP or hardware token</td><td contenteditable="false" data-ek="mfa-ven-t">Before provisioning</td></tr>
+        </tbody>
+      </table></div>
+      <div class="cf-footer">
+        <div class="cf-footer-grid">
+          <div class="cf-footer-item"><strong>Policy Owner</strong><span data-ek="po-owner" contenteditable="false">Douglas Fernandes &amp; Alan Argollo</span></div>
+          <div class="cf-footer-item"><strong>Classification</strong><span data-ek="po-class" contenteditable="false" style="color:#BF2600;font-weight:700">INTERNAL — CONTROLLED</span></div>
+          <div class="cf-footer-item"><strong>Review Cycle</strong><span data-ek="po-cycle2" contenteditable="false">Quarterly — Next: July 1, 2026</span></div>
+          <div class="cf-footer-item"><strong>Created</strong><span data-ek="po-created" contenteditable="false">April 28, 2026</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODALS ══ -->
+<!-- User Add/Edit Modal -->
+<div class="modal-overlay" id="userModal" style="display:none">
+  <div class="modal" style="max-width:660px">
+    <div class="modal-hd">
+      <span class="modal-title" id="userModalTitle">Add New User</span>
+      <button class="modal-close" onclick="closeModal('userModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="um_editing_id"/>
+      <div class="mf-row">
+        <div class="mf"><label>Full Name *</label><input id="um_name" placeholder="Jane Smith"/></div>
+        <div class="mf"><label>Email *</label><input id="um_email" placeholder="jane@bombparty.com"/></div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>Department *</label><input id="um_dept" placeholder="Engineering"/></div>
+        <div class="mf"><label>Job Title *</label><input id="um_title" placeholder="Senior Developer"/></div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>Role</label>
+          <select id="um_role"><option>Standard</option><option>Developer</option><option>Admin</option><option>Super Admin</option><option>Vendor</option><option>Read-Only</option></select>
+        </div>
+        <div class="mf"><label>Status</label>
+          <select id="um_status"><option>Active</option><option>Pending</option><option>Partial</option><option>Revoked</option></select>
+        </div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>Clearance</label>
+          <select id="um_clearance"><option>None</option><option>Confidential</option><option>Secret</option><option>Top Secret</option></select>
+        </div>
+        <div class="mf"><label>Start Date</label><input type="date" id="um_start"/></div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>MFA Enabled</label><select id="um_mfa"><option>Yes</option><option>No</option></select></div>
+        <div class="mf"><label>VPN Access</label><select id="um_vpn"><option>Yes</option><option>No</option></select></div>
+      </div>
+      <div class="mf"><label>Next Review Date</label><input id="um_review" placeholder="2025-07-01"/></div>
+      <div class="mf"><label>Notes</label><textarea id="um_notes" placeholder="Any additional notes..."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="mbtn mbtn-outline" onclick="closeModal('userModal')">Cancel</button>
+      <button class="mbtn mbtn-primary" onclick="saveUser()">Save User</button>
+    </div>
+  </div>
+</div>
+
+<!-- System Add/Edit Modal -->
+<div class="modal-overlay" id="sysModal" style="display:none">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-title" id="sysModalTitle">Add New System</span>
+      <button class="modal-close" onclick="closeModal('sysModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sm_editing_id"/>
+      <div class="mf-row">
+        <div class="mf"><label>System Name *</label><input id="sm_name" placeholder="Slack"/></div>
+        <div class="mf"><label>Type</label>
+          <select id="sm_type"><option>SaaS</option><option>IaaS</option><option>PaaS</option><option>Internal</option><option>Network</option><option>Hybrid</option></select>
+        </div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>Category</label><input id="sm_cat" placeholder="Communication"/></div>
+        <div class="mf"><label>Environment</label>
+          <select id="sm_env"><option>Prod</option><option>Non-Prod</option><option>Staging</option><option>Staging/Prod</option><option>Dev</option></select>
+        </div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>System Owner</label><input id="sm_owner" placeholder="VP Engineering"/></div>
+        <div class="mf"><label>IT Admin</label><input id="sm_it" placeholder="John Smith"/></div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>Criticality</label>
+          <select id="sm_crit"><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+        </div>
+        <div class="mf"><label>Data Classification</label>
+          <select id="sm_data"><option>Internal</option><option>Confidential</option><option>Secret</option><option>Classified</option><option>PII</option><option>Financial</option><option>Public</option></select>
+        </div>
+      </div>
+      <div class="mf"><label>Notes</label><textarea id="sm_notes" placeholder="Additional notes..."></textarea></div>
+    </div>
+    <div class="modal-ft">
+      <button class="mbtn mbtn-outline" onclick="closeModal('sysModal')">Cancel</button>
+      <button class="mbtn mbtn-primary" onclick="saveSystem()">Save System</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="confirmModal" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-hd"><span class="modal-title">Confirm Delete</span><button class="modal-close" onclick="closeModal('confirmModal')">×</button></div>
+    <div class="modal-body"><p id="confirmMsg" style="font-size:13px;color:#172B4D;line-height:1.5"></p></div>
+    <div class="modal-ft">
+      <button class="mbtn mbtn-outline" onclick="closeModal('confirmModal')">Cancel</button>
+      <button class="mbtn mbtn-danger" id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-bar" id="toastBar"></div>
+<div class="pmo-toast" id="pmoToast"><div style="font-size:1.2rem">✅</div><div><div class="tt" id="toastTitle">Submitted</div><div class="tb" id="toastBody">Request logged.</div></div></div>
+
+<script>
+/* ════════════════════════════════════
+   STATE & DEFAULT DATA
+════════════════════════════════════ */
+const CREDS = { 'DPBombParty': 'BomParty@2016' };
+let editMode = false;
+let saveTimer = null;
+
+const DEFAULT_USERS = [
+  {id:'USR-001',name:'Douglas Fernandes',email:'douglasf@bombparty.com',dept:'VR Programs',role:'Admin',title:'Project Manager II',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2022-03-14',review:'2025-07-15',notes:'PMP, CSM, PMI-ACP'},
+  {id:'USR-002',name:'Sarah Mitchell',email:'s.mitchell@bombparty.com',dept:'IT Security',role:'Super Admin',title:'Director of IT Security',status:'Active',clearance:'Top Secret',mfa:'Yes',vpn:'Yes',start:'2019-06-01',review:'2025-07-10',notes:'System owner'},
+  {id:'USR-003',name:'James Okafor',email:'j.okafor@bombparty.com',dept:'Development',role:'Developer',title:'Senior XR Engineer',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2021-08-23',review:'2025-07-01',notes:'VR engine lead'},
+  {id:'USR-004',name:'Maria Santos',email:'m.santos@bombparty.com',dept:'Development',role:'Developer',title:'Junior Developer',status:'Pending',clearance:'None',mfa:'Yes',vpn:'No',start:'2024-11-11',review:'2025-04-28',notes:'New hire'},
+  {id:'USR-005',name:'Kevin Tran',email:'k.tran@bombparty.com',dept:'Finance',role:'Standard',title:'Financial Analyst',status:'Active',clearance:'None',mfa:'Yes',vpn:'No',start:'2020-04-17',review:'2025-07-20',notes:''},
+  {id:'USR-006',name:'Lisa Park',email:'l.park@bombparty.com',dept:'HR',role:'Standard',title:'HR Manager',status:'Active',clearance:'None',mfa:'Yes',vpn:'No',start:'2018-09-03',review:'2025-07-18',notes:''},
+  {id:'USR-007',name:'Carlos Rivera',email:'c.rivera@bombparty.com',dept:'IT Security',role:'Admin',title:'Systems Administrator',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2020-11-30',review:'2025-07-10',notes:'Infrastructure admin'},
+  {id:'USR-008',name:'Tanya Brooks',email:'t.brooks@bombparty.com',dept:'VR Programs',role:'Standard',title:'Content Designer',status:'Active',clearance:'None',mfa:'Yes',vpn:'No',start:'2023-02-14',review:'2025-07-05',notes:''},
+  {id:'USR-009',name:'Marcus Lee',email:'m.lee@bombparty.com',dept:'Operations',role:'Standard',title:'Operations Analyst',status:'Revoked',clearance:'None',mfa:'No',vpn:'No',start:'2019-01-15',review:'N/A',notes:'Departed 2024-06-30'},
+  {id:'USR-010',name:'Rachel Kim',email:'r.kim@bombparty.com',dept:'Compliance',role:'Admin',title:'Compliance Officer',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2021-05-10',review:'2025-07-12',notes:''},
+  {id:'USR-011',name:'Derek Walsh',email:'d.walsh@bombparty.com',dept:'Development',role:'Developer',title:'DevOps Engineer',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2022-07-19',review:'2025-07-10',notes:''},
+  {id:'USR-012',name:'Nina Patel',email:'n.patel@bombparty.com',dept:'VR Programs',role:'Standard',title:'QA Analyst',status:'Active',clearance:'None',mfa:'Yes',vpn:'No',start:'2023-06-05',review:'2025-07-22',notes:''},
+  {id:'USR-013',name:'Tom Hendricks',email:'t.hendricks@bombparty.com',dept:'Executive',role:'Super Admin',title:'CTO',status:'Active',clearance:'Top Secret',mfa:'Yes',vpn:'Yes',start:'2017-03-01',review:'2025-07-05',notes:''},
+  {id:'USR-014',name:'Amy Chang',email:'a.chang@bombparty.com',dept:'Finance',role:'Standard',title:'Budget Coordinator',status:'Partial',clearance:'None',mfa:'Yes',vpn:'No',start:'2022-09-27',review:'2025-04-10',notes:''},
+  {id:'USR-015',name:'IronNet Security (Vendor)',email:'vendor@ironnet.com',dept:'External',role:'Vendor',title:'Security Consultant',status:'Pending',clearance:'None',mfa:'Yes',vpn:'No',start:'2025-03-01',review:'2025-06-01',notes:'NDA on file'},
+  {id:'USR-016',name:'Kristin — Admin',email:'kristin@bombparty.com',dept:'Administration',role:'Admin',title:'Registry Administrator',status:'Active',clearance:'None',mfa:'Yes',vpn:'Yes',start:'2025-04-28',review:'2025-07-28',notes:''},
+];
+
+const DEFAULT_SYSTEMS = [
+  {id:'SYS-001',name:'Jira / Confluence',type:'SaaS',cat:'Project Mgmt',env:'Prod',owner:'VP Programs',it:'Carlos Rivera',crit:'High',data:'Internal',notes:'Primary PM platform'},
+  {id:'SYS-002',name:'Azure DevOps',type:'SaaS',cat:'Dev & CI/CD',env:'Prod',owner:'CTO',it:'Derek Walsh',crit:'Critical',data:'Confidential',notes:'Source control & pipelines'},
+  {id:'SYS-003',name:'AWS GovCloud',type:'IaaS',cat:'Cloud Infra',env:'Prod',owner:'CTO',it:'Carlos Rivera',crit:'Critical',data:'Secret',notes:'Primary cloud infra'},
+  {id:'SYS-004',name:'UE Build Server',type:'Internal',cat:'VR Build',env:'Staging/Prod',owner:'Dev Lead',it:'Derek Walsh',crit:'High',data:'Confidential',notes:'VR build farm'},
+  {id:'SYS-005',name:'ADP Workforce',type:'SaaS',cat:'HR / Payroll',env:'Prod',owner:'VP HR',it:'Lisa Park',crit:'Critical',data:'PII',notes:'HR & payroll'},
+  {id:'SYS-006',name:'NetSuite ERP',type:'SaaS',cat:'Finance',env:'Prod',owner:'CFO',it:'Carlos Rivera',crit:'High',data:'Financial',notes:'Finance & budget'},
+  {id:'SYS-007',name:'SharePoint M365',type:'SaaS',cat:'Collaboration',env:'Prod',owner:'IT Director',it:'Carlos Rivera',crit:'Medium',data:'Internal',notes:'Doc management'},
+  {id:'SYS-008',name:'CrowdStrike',type:'SaaS',cat:'Security (EDR)',env:'Prod',owner:'IT Sec. Dir.',it:'Sarah Mitchell',crit:'Critical',data:'Classified',notes:'Endpoint protection'},
+  {id:'SYS-009',name:'Salesforce CRM',type:'SaaS',cat:'CRM',env:'Prod',owner:'VP Sales',it:'Carlos Rivera',crit:'Medium',data:'Confidential',notes:'Client management'},
+  {id:'SYS-010',name:'VPN (Cisco)',type:'Network',cat:'Remote Access',env:'Prod',owner:'IT Director',it:'Carlos Rivera',crit:'Critical',data:'Internal',notes:'Required for remote work'},
+  {id:'SYS-011',name:'Dev Sandbox',type:'Internal',cat:'Dev Env',env:'Non-Prod',owner:'Dev Lead',it:'Derek Walsh',crit:'Low',data:'Internal',notes:'Isolated dev env'},
+  {id:'SYS-012',name:'Rippling HRIS',type:'SaaS',cat:'IT Mgmt',env:'Prod',owner:'VP HR',it:'Sarah Mitchell',crit:'High',data:'PII',notes:'User provisioning'},
+];
+
+const DEFAULT_MATRIX = {
+  'USR-001':['✅','⚠️','⚠️','✅','🚫','⚠️','✅','🚫','⚠️','✅','✅','🚫'],
+  'USR-002':['🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡'],
+  'USR-003':['✅','✅','⚠️','✅','🚫','🚫','✅','🚫','🚫','✅','✅','🚫'],
+  'USR-004':['⏳','⏳','🚫','⏳','🚫','🚫','⏳','🚫','🚫','🚫','⏳','🚫'],
+  'USR-005':['🚫','🚫','🚫','🚫','🚫','⚠️','✅','🚫','🚫','🚫','🚫','🚫'],
+  'USR-006':['🚫','🚫','🚫','🚫','✅','🚫','✅','🚫','🚫','🚫','🚫','✅'],
+  'USR-007':['🛡','🛡','🛡','🛡','🚫','✅','✅','⚠️','✅','🛡','🛡','✅'],
+  'USR-008':['✅','🚫','🚫','✅','🚫','🚫','✅','🚫','🚫','🚫','✅','🚫'],
+  'USR-009':['🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒'],
+  'USR-010':['✅','⚠️','⚠️','⚠️','⚠️','⚠️','✅','⚠️','⚠️','✅','✅','⚠️'],
+  'USR-011':['✅','✅','✅','✅','🚫','🚫','✅','🚫','🚫','✅','✅','🚫'],
+  'USR-012':['✅','🚫','🚫','✅','🚫','🚫','✅','🚫','🚫','🚫','✅','🚫'],
+  'USR-013':['🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡'],
+  'USR-014':['🚫','🚫','🚫','🚫','🚫','⚠️','✅','🚫','🚫','🚫','🚫','🚫'],
+  'USR-015':['🚫','🚫','🚫','🚫','🚫','🚫','⏳','⏳','🚫','⏳','🚫','🚫'],
+  'USR-016':['🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡'],
+};
+
+const DEFAULT_HEALTH = [
+  {metric:'MFA Enrollment Rate',value:'93% (14/15 active)',target:'100%',status:'Needs Action'},
+  {metric:'VPN Coverage (Privileged)',value:'100%',target:'100%',status:'On Target'},
+  {metric:'Accounts Past Review Date',value:'2',target:'0',status:'Needs Action'},
+  {metric:'Vendor Accounts Active',value:'1',target:'< 5',status:'On Target'},
+  {metric:'Deprovisioning SLA (4hr)',value:'100% compliant',target:'100%',status:'On Target'},
+  {metric:'Open Access Requests',value:'3 pending',target:'0 past 5 days',status:'Needs Action'},
+];
+
+const DEFAULT_SCHED = [
+  {quarter:'Q1 2026',period:'Jan 1 – Mar 31',due:'Apr 15, 2026',lead:'Douglas Fernandes',status:'Completed'},
+  {quarter:'Q2 2026',period:'Apr 1 – Jun 30',due:'Jul 15, 2026',lead:'Alan Argollo',status:'In Progress'},
+  {quarter:'Q3 2026',period:'Jul 1 – Sep 30',due:'Oct 15, 2026',lead:'TBD',status:'Upcoming'},
+  {quarter:'Q4 2026',period:'Oct 1 – Dec 31',due:'Jan 15, 2027',lead:'TBD',status:'Upcoming'},
+];
+
+/* ── Load/save from localStorage ── */
+function ls(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; } }
+function ss(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+
+let users    = ls('bp_users',    DEFAULT_USERS);
+let systems  = ls('bp_systems',  DEFAULT_SYSTEMS);
+let matrix   = ls('bp_matrix',   DEFAULT_MATRIX);
+let health   = ls('bp_health',   DEFAULT_HEALTH);
+let sched    = ls('bp_sched',    DEFAULT_SCHED);
+let inlineEd = ls('bp_inline',   {});
+let requests = [];
+let reqCount = 0;
+
+/* ════════════════════════════════════
+   LOGIN
+════════════════════════════════════ */
+function toggleShowPass() {
+  const inp = document.getElementById('loginPass');
+  const btn = document.getElementById('showPassBtn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const matchKey = Object.keys(CREDS).find(k => k.toLowerCase() === u.toLowerCase());
+  if (matchKey && CREDS[matchKey] === p) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appShell').style.display = 'flex';
+    document.getElementById('tbName').textContent = matchKey;
+    document.getElementById('tbAv').textContent = matchKey.slice(0,2).toUpperCase();
+    document.getElementById('loginErr').style.display = 'none';
+    renderAll();
+    loadInlineEdits();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('loginPass').value = '';
+  }
+}
+function doLogout() {
+  if (editMode) toggleEditMode();
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginErr').style.display = 'none';
+}
+
+/* ════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════ */
+const PAGE_TITLES = {home:'System Access Registry',overview:'Overview & KPIs',users:'User Registry',systems:'System Inventory',matrix:'Access Matrix',requests:'Access Requests',roles:'Role Definitions',policies:'Governance & Policies'};
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('bc-current').textContent = PAGE_TITLES[id] || id;
+  document.querySelector('.main').scrollTo(0,0);
+}
+
+/* ════════════════════════════════════
+   RENDER FUNCTIONS
+════════════════════════════════════ */
+function renderAll() {
+  renderUsers();
+  renderSystems();
+  renderMatrix();
+  renderHealth();
+  renderSched();
+}
+
+/* Tags */
+const rolTag  = r => ({'Super Admin':'tag-purple','Admin':'tag-blue','Developer':'tag-teal','Standard':'tag-gray','Vendor':'tag-orange','Read-Only':'tag-gray'}[r]||'tag-gray');
+const statLbl = s => ({'Active':'lbl-green','Pending':'lbl-amber','Partial':'lbl-amber','Revoked':'lbl-red'}[s]||'lbl-gray');
+const critTag = c => ({'Critical':'tag-red','High':'tag-orange','Medium':'tag-gray','Low':'tag-green'}[c]||'tag-gray');
+const dataTag = d => (d==='Secret'||d==='Classified'?'tag-red':d==='PII'||d==='Financial'?'tag-orange':'tag-gray');
+const statusTxt = s => `<span class="lbl ${statLbl(s)}">${s}</span>`;
+const envTag  = e => (e==='Prod'?'tag-blue':e==='Non-Prod'?'tag-gray':'tag-orange');
+
+function renderUsers() {
+  const em = editMode;
+  const hdr = document.getElementById('userActHdr');
+  if (hdr) hdr.style.display = em ? '' : 'none';
+  document.getElementById('userTableBody').innerHTML = users.map(u => `
+    <tr>
+      <td class="mono">${u.id}</td>
+      <td ${em?'contenteditable="true"':''}><strong>${u.name}</strong></td>
+      <td class="mono" style="font-size:9px" ${em?'contenteditable="true"':''}>${u.email}</td>
+      <td ${em?'contenteditable="true"':''}>${u.dept}</td>
+      <td><span class="tag ${rolTag(u.role)}">${u.role}</span></td>
+      <td ${em?'contenteditable="true"':''}>${u.title}</td>
+      <td>${statusTxt(u.status)}</td>
+      <td>${u.clearance==='None'?'—':`<span class="tag tag-red">${u.clearance}</span>`}</td>
+      <td style="text-align:center;color:${u.mfa==='Yes'?'#006644':'#BF2600'};font-weight:700">${u.mfa}</td>
+      <td style="text-align:center;color:${u.vpn==='Yes'?'#006644':'#BF2600'};font-weight:700">${u.vpn}</td>
+      <td ${em?'contenteditable="true"':''}>${u.start}</td>
+      <td ${em?'contenteditable="true"':''}>${u.review}</td>
+      ${em?`<td><div class="row-actions" style="display:flex"><button class="row-act-btn row-act-edit" onclick="openEditUser('${u.id}')">Edit</button><button class="row-act-btn row-act-del" onclick="deleteUser('${u.id}')">Del</button></div></td>`:''}
+    </tr>`).join('');
+}
+
+function renderSystems() {
+  const em = editMode;
+  const hdr = document.getElementById('sysActHdr');
+  if (hdr) hdr.style.display = em ? '' : 'none';
+  document.getElementById('sysTableBody').innerHTML = systems.map(s => `
+    <tr>
+      <td class="mono">${s.id}</td>
+      <td ${em?'contenteditable="true"':''}><strong>${s.name}</strong></td>
+      <td ${em?'contenteditable="true"':''}>${s.type}</td>
+      <td ${em?'contenteditable="true"':''}>${s.cat}</td>
+      <td><span class="tag ${envTag(s.env)}">${s.env}</span></td>
+      <td ${em?'contenteditable="true"':''}>${s.owner}</td>
+      <td ${em?'contenteditable="true"':''}>${s.it}</td>
+      <td><span class="tag ${critTag(s.crit)}">${s.crit}</span></td>
+      <td><span class="tag ${dataTag(s.data)}">${s.data}</span></td>
+      ${em?`<td><div class="row-actions" style="display:flex"><button class="row-act-btn row-act-edit" onclick="openEditSystem('${s.id}')">Edit</button><button class="row-act-btn row-act-del" onclick="deleteSystem('${s.id}')">Del</button></div></td>`:''}
+    </tr>`).join('');
+}
+
+const MATRIX_VALS = ['✅','⚠️','⏳','🚫','🔒','🛡'];
+const mCls = v => ({✅:'m-y',🚫:'m-n',⚠️:'m-p',⏳:'m-q',🔒:'m-r',🛡:'m-a'}[v]||'');
+function nextMV(v) { const i=MATRIX_VALS.indexOf(v); return MATRIX_VALS[(i+1)%MATRIX_VALS.length]; }
+
+function renderMatrix() {
+  const head = document.getElementById('matrixHead');
+  const body = document.getElementById('matrixBody');
+  head.innerHTML = `<tr><th class="uc">User</th>${systems.map(s=>`<th title="${s.name}">${s.name.length>10?s.name.slice(0,10)+'…':s.name}</th>`).join('')}</tr>`;
+  body.innerHTML = users.map(u => {
+    const row = matrix[u.id] || [];
+    while(row.length < systems.length) row.push('🚫');
+    return `<tr>
+      <td class="uc"><div style="font-weight:600;font-size:10px">${u.name.split(' ').slice(0,2).join(' ')}</div><div class="mono" style="font-size:9px">${u.id}</div></td>
+      ${systems.map((s,i)=>`<td class="${mCls(row[i]||'🚫')}" style="cursor:pointer" onclick="toggleMatrix('${u.id}',${i})" title="Click to change">${row[i]||'🚫'}</td>`).join('')}
+    </tr>`;
+  }).join('');
+}
+
+function toggleMatrix(uid, idx) {
+  if (!matrix[uid]) matrix[uid] = systems.map(()=>'🚫');
+  while(matrix[uid].length <= idx) matrix[uid].push('🚫');
+  matrix[uid][idx] = nextMV(matrix[uid][idx]);
+  ss('bp_matrix', matrix);
+  renderMatrix();
+  showToast('✓ Access updated');
+}
+
+function renderHealth() {
+  const em = editMode;
+  document.getElementById('healthBody').innerHTML = health.map((r,i) => `
+    <tr>
+      <td ${em?'contenteditable="true"':''}>${r.metric}</td>
+      <td ${em?'contenteditable="true"':''}>${r.value}</td>
+      <td ${em?'contenteditable="true"':''}>${r.target}</td>
+      <td>${r.status==='On Target'?'<span class="lbl lbl-green">On Target</span>':'<span class="lbl lbl-amber">Needs Action</span>'}</td>
+      ${em?`<td><div class="row-actions" style="display:flex"><button class="row-act-btn row-act-del" onclick="delHealthRow(${i})">Del</button></div></td>`:''}
+    </tr>`).join('');
+  const th = document.querySelector('#healthTable thead tr th:last-child');
+  if (th) th.style.display = em ? '' : 'none';
+}
+
+function renderSched() {
+  const em = editMode;
+  document.getElementById('schedBody').innerHTML = sched.map((r,i) => {
+    const scls = {Completed:'lbl-green','In Progress':'lbl-blue',Upcoming:'lbl-gray'}[r.status]||'lbl-gray';
+    return `<tr>
+      <td ${em?'contenteditable="true"':''}>${r.quarter}</td>
+      <td ${em?'contenteditable="true"':''}>${r.period}</td>
+      <td ${em?'contenteditable="true"':''}>${r.due}</td>
+      <td ${em?'contenteditable="true"':''}>${r.lead}</td>
+      <td><span class="lbl ${scls}">${r.status}</span></td>
+      ${em?`<td><div class="row-actions" style="display:flex"><button class="row-act-btn row-act-del" onclick="delSchedRow(${i})">Del</button></div></td>`:''}
+    </tr>`;
+  }).join('');
+  const th = document.querySelector('#schedTable thead tr th:last-child');
+  if (th) th.style.display = em ? '' : 'none';
+}
+
+/* ════════════════════════════════════
+   EDIT MODE (Option A — Inline)
+════════════════════════════════════ */
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = document.getElementById('editToggleBtn');
+  const banner = document.getElementById('editBanner');
+  const topbar = document.getElementById('topbar');
+
+  if (editMode) {
+    document.body.classList.add('edit-mode');
+    btn.textContent = '✓ Exit Edit Mode';
+    btn.classList.add('edit-on');
+    banner.classList.add('show');
+    topbar.classList.add('editing');
+    // Enable contenteditable on all data-ek elements
+    document.querySelectorAll('[data-ek]').forEach(el => el.setAttribute('contenteditable','true'));
+    showToast('✎ Edit Mode ON — click any text or cell to edit');
+  } else {
+    document.body.classList.remove('edit-mode');
+    btn.textContent = '✎ Edit Mode';
+    btn.classList.remove('edit-on');
+    banner.classList.remove('show');
+    topbar.classList.remove('editing');
+    document.querySelectorAll('[data-ek]').forEach(el => el.setAttribute('contenteditable','false'));
+    saveInlineEdits();
+    showToast('✓ Changes saved');
+  }
+  renderAll();
+}
+
+function saveInlineEdits() {
+  document.querySelectorAll('[data-ek]').forEach(el => {
+    const key = el.getAttribute('data-ek');
+    inlineEd[key] = el.innerHTML;
+  });
+  ss('bp_inline', inlineEd);
+}
+
+function loadInlineEdits() {
+  const saved = ls('bp_inline', {});
+  Object.entries(saved).forEach(([key, val]) => {
+    const el = document.querySelector(`[data-ek="${key}"]`);
+    if (el) el.innerHTML = val;
+  });
+}
+
+// Auto-save inline edits on input
+document.addEventListener('input', e => {
+  if (!editMode) return;
+  if (e.target.hasAttribute('data-ek')) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { saveInlineEdits(); }, 1200);
+  }
+});
+
+/* ════════════════════════════════════
+   USER CRUD (Option B — Section Edit)
+════════════════════════════════════ */
+function genId(pfx, list) {
+  const nums = list.map(x=>parseInt(x.id.split('-')[1]||0)).filter(Boolean);
+  return `${pfx}-${String((nums.length?Math.max(...nums):0)+1).padStart(3,'0')}`;
+}
+
+function openAddUser() { openModal('userModal'); document.getElementById('userModalTitle').textContent='Add New User'; document.getElementById('um_editing_id').value=''; clearModalForm('um_'); document.getElementById('um_start').value=new Date().toISOString().split('T')[0]; }
+function openEditUser(id) {
+  const u = users.find(x=>x.id===id); if(!u)return;
+  openModal('userModal'); document.getElementById('userModalTitle').textContent='Edit User — '+u.name;
+  document.getElementById('um_editing_id').value=id;
+  document.getElementById('um_name').value=u.name; document.getElementById('um_email').value=u.email;
+  document.getElementById('um_dept').value=u.dept; document.getElementById('um_title').value=u.title;
+  document.getElementById('um_role').value=u.role; document.getElementById('um_status').value=u.status;
+  document.getElementById('um_clearance').value=u.clearance; document.getElementById('um_start').value=u.start;
+  document.getElementById('um_mfa').value=u.mfa; document.getElementById('um_vpn').value=u.vpn;
+  document.getElementById('um_review').value=u.review; document.getElementById('um_notes').value=u.notes||'';
+}
+function saveUser() {
+  const name = document.getElementById('um_name').value.trim();
+  const email = document.getElementById('um_email').value.trim();
+  if(!name||!email){showToast('Name and email are required',true);return;}
+  const eid = document.getElementById('um_editing_id').value;
+  const u = {id:eid||genId('USR',users),name,email,dept:document.getElementById('um_dept').value.trim(),title:document.getElementById('um_title').value.trim(),role:document.getElementById('um_role').value,status:document.getElementById('um_status').value,clearance:document.getElementById('um_clearance').value,start:document.getElementById('um_start').value,mfa:document.getElementById('um_mfa').value,vpn:document.getElementById('um_vpn').value,review:document.getElementById('um_review').value.trim(),notes:document.getElementById('um_notes').value.trim()};
+  if(eid) { users = users.map(x=>x.id===eid?u:x); showToast('✓ User updated'); }
+  else { users.push(u); matrix[u.id]=systems.map(()=>'🚫'); ss('bp_matrix',matrix); showToast('✓ User added'); }
+  ss('bp_users',users); renderUsers(); renderMatrix(); closeModal('userModal');
+}
+function deleteUser(id) {
+  const u = users.find(x=>x.id===id); if(!u)return;
+  confirm2(`Delete user "${u.name}"? This will also remove their access matrix row.`, ()=>{
+    users=users.filter(x=>x.id!==id); delete matrix[id];
+    ss('bp_users',users); ss('bp_matrix',matrix); renderUsers(); renderMatrix(); showToast('✓ User deleted');
+  });
+}
+
+/* ════════════════════════════════════
+   SYSTEM CRUD
+════════════════════════════════════ */
+function openAddSystem() { openModal('sysModal'); document.getElementById('sysModalTitle').textContent='Add New System'; document.getElementById('sm_editing_id').value=''; clearModalForm('sm_'); }
+function openEditSystem(id) {
+  const s = systems.find(x=>x.id===id); if(!s)return;
+  openModal('sysModal'); document.getElementById('sysModalTitle').textContent='Edit System — '+s.name;
+  document.getElementById('sm_editing_id').value=id;
+  document.getElementById('sm_name').value=s.name; document.getElementById('sm_type').value=s.type;
+  document.getElementById('sm_cat').value=s.cat; document.getElementById('sm_env').value=s.env;
+  document.getElementById('sm_owner').value=s.owner; document.getElementById('sm_it').value=s.it;
+  document.getElementById('sm_crit').value=s.crit; document.getElementById('sm_data').value=s.data;
+  document.getElementById('sm_notes').value=s.notes||'';
+}
+function saveSystem() {
+  const name = document.getElementById('sm_name').value.trim();
+  if(!name){showToast('System name is required',true);return;}
+  const eid = document.getElementById('sm_editing_id').value;
+  const s = {id:eid||genId('SYS',systems),name,type:document.getElementById('sm_type').value,cat:document.getElementById('sm_cat').value.trim(),env:document.getElementById('sm_env').value,owner:document.getElementById('sm_owner').value.trim(),it:document.getElementById('sm_it').value.trim(),crit:document.getElementById('sm_crit').value,data:document.getElementById('sm_data').value,notes:document.getElementById('sm_notes').value.trim()};
+  if(eid) { systems=systems.map(x=>x.id===eid?s:x); showToast('✓ System updated'); }
+  else { systems.push(s); Object.keys(matrix).forEach(uid=>{ if(!matrix[uid]) matrix[uid]=[]; matrix[uid].push('🚫'); }); ss('bp_matrix',matrix); showToast('✓ System added'); }
+  ss('bp_systems',systems); renderSystems(); renderMatrix(); closeModal('sysModal');
+}
+function deleteSystem(id) {
+  const s = systems.find(x=>x.id===id); if(!s)return;
+  confirm2(`Delete system "${s.name}"? This removes it from the access matrix too.`, ()=>{
+    const idx=systems.findIndex(x=>x.id===id);
+    systems=systems.filter(x=>x.id!==id);
+    Object.keys(matrix).forEach(uid=>{ if(matrix[uid]) matrix[uid].splice(idx,1); });
+    ss('bp_systems',systems); ss('bp_matrix',matrix); renderSystems(); renderMatrix(); showToast('✓ System deleted');
+  });
+}
+
+/* ── Health/Sched row management ── */
+function addHealthRow() { health.push({metric:'New Metric',value:'—',target:'—',status:'On Target'}); ss('bp_health',health); renderHealth(); showToast('✓ Row added'); }
+function delHealthRow(i) { health.splice(i,1); ss('bp_health',health); renderHealth(); showToast('✓ Row deleted'); }
+function addSchedRow() { health; sched.push({quarter:'Q? 2026',period:'— – —',due:'—',lead:'TBD',status:'Upcoming'}); ss('bp_sched',sched); renderSched(); showToast('✓ Row added'); }
+function delSchedRow(i) { sched.splice(i,1); ss('bp_sched',sched); renderSched(); showToast('✓ Row deleted'); }
+
+/* ════════════════════════════════════
+   ACCESS REQUEST FORM
+════════════════════════════════════ */
+const RT_CLASS = {'New User Provisioning':'rt-new','Access Modification':'rt-mod','Access Revocation':'rt-rev','Temporary Access':'rt-tmp','Role / Permission Change':'rt-role'};
+function selR(gid,el){document.querySelectorAll('#'+gid+' .pmo-ro').forEach(r=>r.classList.remove('sel'));el.classList.add('sel');}
+function selC(el){el.classList.toggle('sel',el.querySelector('input').checked);}
+function getRadio(name){const el=document.querySelector(`input[name="${name}"]:checked`);return el?el.value:'';}
+function getChecked(gid){return Array.from(document.querySelectorAll('#'+gid+' input[type=checkbox]:checked')).map(c=>c.value).join(', ')||'—';}
+
+function submitAccessRequest() {
+  const req = ['ua_rname','ua_remail','ua_fname','ua_lname','ua_email','ua_title','ua_dept','ua_manager','ua_start','ua_justification'];
+  let ok=true; req.forEach(id=>{const el=document.getElementById(id);const bad=!el.value.trim();el.style.borderColor=bad?'#E15D5D':'';if(bad)ok=false;});
+  if(!getRadio('ua_req_type')||!getRadio('ua_emp')||!getRadio('ua_approval')||!ok){showPmoToast('Missing Fields','Please complete all required fields.',true);return;}
+  reqCount++;
+  const now=new Date(); const ts=now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const row={num:reqCount,ts,reqType:getRadio('ua_req_type'),userName:document.getElementById('ua_fname').value.trim()+' '+document.getElementById('ua_lname').value.trim(),workEmail:document.getElementById('ua_email').value.trim(),dept:document.getElementById('ua_dept').value,title:document.getElementById('ua_title').value.trim(),emp:getRadio('ua_emp'),level:document.getElementById('ua_access_level').value||'—',systems:getChecked('ua_systems')+(document.getElementById('ua_other_sys').value.trim()?', '+document.getElementById('ua_other_sys').value.trim():''),start:document.getElementById('ua_start').value,end:document.getElementById('ua_end').value||'—',urgency:document.getElementById('ua_urgency').value||'—',approval:getRadio('ua_approval'),reqName:document.getElementById('ua_rname').value.trim(),reqEmail:document.getElementById('ua_remail').value.trim(),just:document.getElementById('ua_justification').value.trim()};
+  requests.unshift(row); renderRequests(); clearRequestForm();
+  showPmoToast('Request Submitted ✓','Logged in the Access Request Registry below.');
+}
+function renderRequests() {
+  document.getElementById('reqCount').textContent=requests.length+(requests.length===1?' entry':' entries');
+  if(!requests.length){document.getElementById('reqTableBody').innerHTML='<tr><td colspan="17"><div class="sheet-empty"><div class="sei">📋</div><p>No requests yet.<br>Complete the form above to log a request.</p></div></td></tr>';return;}
+  document.getElementById('reqTableBody').innerHTML=requests.map((r,i)=>`<tr class="${i===0?'new-row':''}"><td style="font-weight:700;color:#5E6C84;font-size:10px">#${r.num}</td><td style="font-size:10px;color:#5E6C84;white-space:nowrap">${r.ts}</td><td><span class="req-type-tag ${RT_CLASS[r.reqType]||'rt-new'}">${r.reqType}</span></td><td><strong>${r.userName}</strong></td><td style="font-size:10px;color:#5E6C84">${r.workEmail}</td><td>${r.dept}</td><td>${r.title}</td><td>${r.emp}</td><td>${r.level}</td><td style="font-size:10px;max-width:160px">${r.systems}</td><td style="white-space:nowrap">${r.start}</td><td style="white-space:nowrap">${r.end}</td><td style="font-size:10px">${r.urgency}</td><td style="font-size:10px">${r.approval}</td><td>${r.reqName}</td><td style="font-size:10px;color:#5E6C84;max-width:180px">${r.just}</td><td><span class="status-tag st-pending">Pending</span></td></tr>`).join('');
+}
+function clearRequestForm() {
+  ['ua_rname','ua_remail','ua_fname','ua_lname','ua_email','ua_title','ua_manager','ua_start','ua_end','ua_other_sys','ua_roles','ua_justification','ua_notes'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.style.borderColor='';}});
+  ['ua_dept','ua_access_level','ua_urgency'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
+  document.querySelectorAll('.pmo-ro.sel,.pmo-co.sel').forEach(el=>el.classList.remove('sel'));
+  document.querySelectorAll('#page-requests input[type=checkbox],#page-requests input[type=radio]').forEach(el=>el.checked=false);
+}
+function exportRequests() {
+  if(!requests.length){showToast('Nothing to export yet',true);return;}
+  if(typeof XLSX==='undefined'){showToast('XLSX not loaded',true);return;}
+  const wb=XLSX.utils.book_new();
+  const data=requests.map(r=>({'#':r.num,'Submitted':r.ts,'Request Type':r.reqType,'Full Name':r.userName,'Work Email':r.workEmail,'Department':r.dept,'Job Title':r.title,'Employment':r.emp,'Access Level':r.level,'Systems':r.systems,'Start':r.start,'End':r.end,'Urgency':r.urgency,'Approval':r.approval,'Requestor':r.reqName,'Requestor Email':r.reqEmail,'Justification':r.just,'Status':'Pending'}));
+  const ws=XLSX.utils.json_to_sheet(data); ws['!cols']=Array(18).fill({wch:26});
+  XLSX.utils.book_append_sheet(wb,ws,'Access Requests');
+  const d=new Date().toISOString().split('T')[0]; XLSX.writeFile(wb,`BombParty_Access_Requests_${d}.xlsx`);
+  showToast('✓ Excel exported');
+}
+
+/* ════════════════════════════════════
+   MODALS
+════════════════════════════════════ */
+function openModal(id) { document.getElementById(id).style.display='flex'; }
+function closeModal(id) { document.getElementById(id).style.display='none'; }
+function clearModalForm(pfx) { document.querySelectorAll(`[id^="${pfx}"]`).forEach(el=>{if(el.tagName==='INPUT'&&el.type!=='hidden')el.value='';if(el.tagName==='SELECT')el.selectedIndex=0;if(el.tagName==='TEXTAREA')el.value='';}); }
+function confirm2(msg, onOk) {
+  document.getElementById('confirmMsg').textContent=msg;
+  document.getElementById('confirmModal').style.display='flex';
+  const btn=document.getElementById('confirmOkBtn');
+  btn.onclick=()=>{closeModal('confirmModal');onOk();};
+}
+document.addEventListener('click', e => { if(e.target.classList.contains('modal-overlay'))closeModal(e.target.id); });
+
+/* ════════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+let toastTimer;
+function showToast(msg, isErr=false) {
+  const t=document.getElementById('toastBar');
+  t.textContent=msg; t.style.background=isErr?'#BF2600':'#172B4D';
+  t.classList.add('show'); clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+function showPmoToast(title,body,err=false) {
+  const t=document.getElementById('pmoToast');
+  document.getElementById('toastTitle').textContent=title; document.getElementById('toastBody').textContent=body;
+  t.style.background=err?'#E15D5D':'#0F3053'; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded',()=>{
+  const s=document.getElementById('ua_start'); if(s&&!s.value) s.value=new Date().toISOString().split('T')[0];
+});
+</script>
+
+<script>
+/* FINAL FIX PATCH: Login + Edit Mode */
+(function () {
+  const VALID_USERS = {
+    "admin": "admin123",
+    "DPBombParty": "BomParty@2016"
+  };
+
+  window.doLogin = function () {
+    const usernameEl = document.getElementById("loginUser");
+    const passwordEl = document.getElementById("loginPass");
+    const errorBox = document.getElementById("loginErr");
+    const loginScreen = document.getElementById("loginScreen");
+    const appShell = document.getElementById("appShell");
+
+    const username = usernameEl ? usernameEl.value.trim() : "";
+    const password = passwordEl ? passwordEl.value.trim() : "";
+
+    if (VALID_USERS[username] && VALID_USERS[username] === password) {
+      if (loginScreen) loginScreen.style.display = "none";
+      if (appShell) appShell.style.display = "flex";
+      if (errorBox) errorBox.style.display = "none";
+
+      const tbName = document.getElementById("tbName");
+      const tbAv = document.getElementById("tbAv");
+
+      if (tbName) tbName.textContent = username;
+      if (tbAv) tbAv.textContent = username.substring(0, 2).toUpperCase();
+
+      return false;
+    }
+
+    if (errorBox) {
+      errorBox.style.display = "block";
+      errorBox.textContent = "Invalid username or password. Access denied.";
+    }
+
+    return false;
+  };
+
+  window.doLogout = function () {
+    const loginScreen = document.getElementById("loginScreen");
+    const appShell = document.getElementById("appShell");
+    const usernameEl = document.getElementById("loginUser");
+    const passwordEl = document.getElementById("loginPass");
+
+    if (loginScreen) loginScreen.style.display = "flex";
+    if (appShell) appShell.style.display = "none";
+    if (usernameEl) usernameEl.value = "";
+    if (passwordEl) passwordEl.value = "";
+
+    return false;
+  };
+
+  window.toggleShowPass = function () {
+    const passField = document.getElementById("loginPass");
+    if (passField) {
+      passField.type = passField.type === "password" ? "text" : "password";
+    }
+    return false;
+  };
+
+  window.toggleEditMode = function () {
+    const body = document.body;
+    const editBtn = document.getElementById("editToggleBtn");
+    const banner = document.getElementById("editBanner");
+    const topbar = document.getElementById("topbar");
+
+    const isNowEditing = !body.classList.contains("edit-mode");
+    body.classList.toggle("edit-mode", isNowEditing);
+
+    document.querySelectorAll("[data-ek]").forEach(function (el) {
+      el.setAttribute("contenteditable", isNowEditing ? "true" : "false");
+    });
+
+    if (editBtn) {
+      editBtn.textContent = isNowEditing ? "✓ Exit Edit Mode" : "✎ Edit Mode";
+      editBtn.classList.toggle("edit-on", isNowEditing);
+      editBtn.disabled = false;
+      editBtn.style.pointerEvents = "auto";
+      editBtn.style.cursor = "pointer";
+    }
+
+    if (banner) banner.classList.toggle("show", isNowEditing);
+    if (topbar) topbar.classList.toggle("editing", isNowEditing);
+
+    return false;
+  };
+
+  window.addEventListener("DOMContentLoaded", function () {
+    const editBtn = document.getElementById("editToggleBtn");
+    if (editBtn) {
+      editBtn.type = "button";
+      editBtn.disabled = false;
+      editBtn.style.pointerEvents = "auto";
+      editBtn.onclick = function (event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        return window.toggleEditMode();
+      };
+    }
+
+    const loginBtn = document.querySelector(".lb-btn");
+    if (loginBtn) {
+      loginBtn.type = "button";
+      loginBtn.onclick = function (event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        return window.doLogin();
+      };
+    }
+
+    const showPassBtn = document.getElementById("showPassBtn");
+    if (showPassBtn) {
+      showPassBtn.type = "button";
+      showPassBtn.onclick = function (event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        return window.toggleShowPass();
+      };
+    }
+
+    ["loginUser", "loginPass"].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener("keydown", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            window.doLogin();
+          }
+        });
+      }
+    });
+  });
+})();
+</script>
+
+
+<script>
+/* NAVIGATION FIX PATCH: Left menu page switching */
+(function () {
+  const PAGE_TITLES = {
+    home: "System Access Registry",
+    overview: "Overview & KPIs",
+    users: "User Registry",
+    systems: "System Inventory",
+    matrix: "Access Matrix",
+    requests: "Access Requests",
+    roles: "Role Definitions",
+    policies: "Governance & Policies"
+  };
+
+  window.showPage = function (pageName) {
+    const pages = document.querySelectorAll(".page");
+    pages.forEach(function (page) {
+      page.classList.remove("active");
+      page.style.display = "none";
+    });
+
+    const target = document.getElementById("page-" + pageName);
+    if (target) {
+      target.classList.add("active");
+      target.style.display = "block";
+    }
+
+    const current = document.getElementById("bc-current");
+    if (current) {
+      current.textContent = PAGE_TITLES[pageName] || pageName;
+    }
+
+    document.querySelectorAll(".lnav-item, .lnav-sub").forEach(function (btn) {
+      btn.classList.remove("active");
+      const clickAttr = btn.getAttribute("onclick") || "";
+      if (clickAttr.includes("'" + pageName + "'") || clickAttr.includes('"' + pageName + '"')) {
+        btn.classList.add("active");
+      }
+    });
+
+    const main = document.querySelector(".main");
+    if (main) main.scrollTop = 0;
+
+    return false;
+  };
+
+  window.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".lnav-item, .lnav-sub, .pnb, .bc a").forEach(function (btn) {
+      const clickAttr = btn.getAttribute("onclick") || "";
+      const match = clickAttr.match(/showPage\(['"]([^'"]+)['"]\)/);
+
+      if (match && match[1]) {
+        const pageName = match[1];
+        btn.onclick = function (event) {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          return window.showPage(pageName);
+        };
+      }
+    });
+
+    window.showPage("home");
+  });
+})();
+</script>
+
+
+<script>
+/* KPI AUTOMATION PATCH: Current Registry Metrics */
+(function () {
+  function textOf(el) {
+    return (el ? el.textContent : "").trim().toLowerCase();
+  }
+
+  function setKpi(id, value) {
+    const el = document.getElementById(id) || document.querySelector('[data-ek="' + id.replace(/^kpi-/, "kpi-") + '"]');
+    if (el) el.textContent = value;
+  }
+
+  function getUserRows() {
+    const body = document.getElementById("userTableBody");
+    if (!body) return [];
+    return Array.from(body.querySelectorAll("tr")).filter(function (row) {
+      return row.querySelectorAll("td").length > 1;
+    });
+  }
+
+  function getSystemRows() {
+    const body = document.getElementById("sysTableBody");
+    if (!body) return [];
+    return Array.from(body.querySelectorAll("tr")).filter(function (row) {
+      return row.querySelectorAll("td").length > 1;
+    });
+  }
+
+  function getRequestRows() {
+    const body = document.getElementById("reqTableBody");
+    if (!body) return [];
+    return Array.from(body.querySelectorAll("tr")).filter(function (row) {
+      return row.querySelectorAll("td").length > 1 && !textOf(row).includes("no requests yet");
+    });
+  }
+
+  window.updateRegistryMetrics = function () {
+    const userRows = getUserRows();
+    const systemRows = getSystemRows();
+    const requestRows = getRequestRows();
+
+    let totalUsers = userRows.length;
+    let activeAccounts = 0;
+    let revokedAccounts = 0;
+    let pendingReview = 0;
+    let privilegedAccounts = 0;
+
+    userRows.forEach(function (row) {
+      const cells = Array.from(row.querySelectorAll("td"));
+      const rowText = textOf(row);
+
+      if (rowText.includes("active")) activeAccounts++;
+      if (rowText.includes("revoked") || rowText.includes("deprovisioned") || rowText.includes("terminated")) revokedAccounts++;
+      if (rowText.includes("pending") || rowText.includes("review")) pendingReview++;
+
+      const roleText = cells[4] ? textOf(cells[4]) : "";
+      const accessText = rowText;
+
+      if (
+        roleText.includes("admin") ||
+        roleText.includes("super admin") ||
+        roleText.includes("owner") ||
+        accessText.includes("elevated") ||
+        accessText.includes("privileged")
+      ) {
+        privilegedAccounts++;
+      }
+    });
+
+    requestRows.forEach(function (row) {
+      const rowText = textOf(row);
+      if (rowText.includes("pending")) pendingReview++;
+    });
+
+    const systemsTracked = systemRows.length;
+
+    const kpis = {
+      "kpi-total": totalUsers,
+      "kpi-active": activeAccounts,
+      "kpi-revoked": revokedAccounts,
+      "kpi-pending": pendingReview,
+      "kpi-systems": systemsTracked,
+      "kpi-priv": privilegedAccounts
+    };
+
+    Object.keys(kpis).forEach(function (key) {
+      const el = document.querySelector('[data-ek="' + key + '"]');
+      if (el) el.textContent = kpis[key];
+    });
+
+    return kpis;
+  };
+
+  function observeAndUpdate(targetId) {
+    const target = document.getElementById(targetId);
+    if (!target || !window.MutationObserver) return;
+
+    const observer = new MutationObserver(function () {
+      clearTimeout(window.__kpiTimer);
+      window.__kpiTimer = setTimeout(window.updateRegistryMetrics, 100);
+    });
+
+    observer.observe(target, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+      window.updateRegistryMetrics();
+      observeAndUpdate("userTableBody");
+      observeAndUpdate("sysTableBody");
+      observeAndUpdate("reqTableBody");
+    }, 250);
+  });
+
+  window.addEventListener("load", function () {
+    setTimeout(window.updateRegistryMetrics, 500);
+  });
+})();
+</script>
+
+</body>
+</html>

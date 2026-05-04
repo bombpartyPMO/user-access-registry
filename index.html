@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BombParty — System Access Registry</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --citron:#EAE753;--navy:#0F3053;--green:#3DB88B;--amber:#F0B63C;
+  --red:#E15D5D;--charcoal:#2C2C2C;--ice:#EEF8FF;--soft:#F7F9FC;
+  --line:rgba(15,48,83,0.10);--line2:rgba(15,48,83,0.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;color:var(--charcoal);background:var(--soft);-webkit-font-smoothing:antialiased;line-height:1.55;font-size:14px}
+
+/* ─── LOGIN ─── */
+.login-screen{position:fixed;inset:0;background:var(--soft);display:flex;align-items:center;justify-content:center;z-index:9999;padding:2rem}
+.login-box{background:#fff;border-radius:16px;padding:2.4rem 2.4rem;width:100%;max-width:400px;box-shadow:0 1px 4px rgba(15,48,83,.06),0 4px 32px rgba(15,48,83,.09);border:1px solid var(--line)}
+.lb-brand{display:flex;align-items:center;gap:11px;margin-bottom:2rem}
+.lb-icon{width:40px;height:40px;background:rgba(234,231,83,0.35);border:1px solid rgba(234,231,83,0.65);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.lb-name{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--navy)}
+.lb-sub{font-size:11px;color:#5E6C84;margin-top:2px}
+.lb-title{font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.lb-desc{font-size:12px;color:#5E6C84;margin-bottom:2rem;line-height:1.5}
+.lf{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.9rem}
+.lf label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5E6C84}
+.lf input{font-family:'Inter',sans-serif;font-size:13px;color:var(--navy);background:var(--soft);border:1.5px solid rgba(15,48,83,0.15);border-radius:9px;padding:.68rem .88rem;outline:none;transition:all .18s}
+.lf input:focus{border-color:var(--navy);background:#fff;box-shadow:0 0 0 3px rgba(15,48,83,.08)}
+.lb-btn{width:100%;padding:.85rem;background:var(--navy);color:#fff;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:.4rem;transition:all .2s}
+.lb-btn:hover{background:#173E69;transform:translateY(-1px)}
+.lb-err{font-size:11px;color:#B91C1C;margin-top:.7rem;padding:9px 13px;background:rgba(225,93,93,0.1);border-radius:8px;text-align:center;display:none}
+.lb-note{margin-top:1.5rem;padding:11px 14px;background:var(--soft);border-radius:9px;font-size:11px;color:#5E6C84;line-height:1.55;text-align:center}
+
+/* ─── NAV ─── */
+.nav{position:sticky;top:0;z-index:100;background:rgba(247,249,252,0.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--line);padding:.7rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.nav-left{display:flex;align-items:center;gap:.85rem}
+.nav-logo{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);background:rgba(234,231,83,0.40);border:1px solid rgba(234,231,83,0.6);padding:4px 10px;border-radius:100px}
+.nav-title{font-size:.78rem;font-weight:500;color:var(--navy);opacity:.6}
+.nav-right{display:flex;align-items:center;gap:.75rem}
+.nav-pill{display:flex;align-items:center;gap:5px;font-size:.55rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--navy);opacity:.5;background:white;border:1px solid var(--line);padding:4px 10px;border-radius:100px}
+.nav-pill .dot{width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0}
+.nav-pill .dot.green{background:var(--green)}
+.nav-date{font-size:.58rem;color:var(--navy);opacity:.35;letter-spacing:.04em;text-transform:uppercase}
+.nav-av{width:26px;height:26px;border-radius:50%;background:var(--navy);color:var(--citron);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+
+/* ─── TABS ─── */
+.tabs{position:sticky;top:49px;z-index:90;background:var(--soft);border-bottom:1px solid var(--line);padding:0 2rem;display:flex;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:.9rem 1.1rem;font-family:'Inter',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);opacity:.38;cursor:pointer;white-space:nowrap;transition:opacity .15s,border-color .15s}
+.tab-btn:hover{opacity:.65}
+.tab-btn.active{opacity:1;border-bottom-color:var(--navy)}
+.tab-num{opacity:.5;margin-right:4px}
+
+/* ─── EDIT TOGGLE ─── */
+.edit-toggle-btn{font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 13px;border-radius:100px;border:1.5px solid var(--line);background:white;color:var(--navy);cursor:pointer;opacity:.45;transition:all .15s;font-family:'Inter',sans-serif}
+.edit-toggle-btn:hover{opacity:.7}
+.edit-toggle-btn.active{background:rgba(234,231,83,0.35);border-color:rgba(234,231,83,0.7);opacity:1}
+
+/* ─── LAYOUT ─── */
+.main{max-width:1100px;margin:0 auto;padding:2.5rem 2rem 4rem}
+.pane{display:none}
+.pane.active{display:block}
+
+/* ─── PAGE HEADER ─── */
+.page-header{margin-bottom:2rem}
+.page-header h2{font-size:1.45rem;font-weight:700;color:var(--navy);letter-spacing:-.02em;margin-bottom:.4rem}
+.page-header p{font-size:.8rem;color:var(--navy);opacity:.5;line-height:1.6}
+
+/* ─── SECTION BLOCK ─── */
+.section-block{background:white;border:1px solid var(--line);border-radius:14px;margin-bottom:1.25rem;overflow:hidden}
+.section-head{display:flex;align-items:flex-start;gap:1rem;padding:1.4rem 1.6rem 1.2rem;border-bottom:1px solid var(--line2)}
+.section-icon{width:44px;height:44px;flex-shrink:0;background:var(--ice);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.section-head-text h3{font-size:.85rem;font-weight:600;color:var(--navy);margin-bottom:.2rem}
+.section-head-text span{font-size:.73rem;color:var(--navy);opacity:.45}
+.section-body{padding:1.4rem 1.6rem}
+.section-body.no-pad{padding:0}
+
+/* ─── TABLE ─── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:600px}
+thead th{padding:.7rem 1rem;text-align:left;font-size:.58rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--navy);opacity:.45;background:var(--soft);border-bottom:1px solid var(--line)}
+tbody tr{border-bottom:1px solid var(--line2);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(15,48,83,0.02)}
+td{padding:.8rem 1rem;font-size:.8rem;vertical-align:top;line-height:1.55}
+.td-bold{font-weight:600;color:var(--navy)}
+.td-muted{color:var(--navy);opacity:.45;font-size:.75rem}
+
+/* ─── BADGES ─── */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.03em;white-space:nowrap}
+.badge-blue{background:rgba(15,48,83,0.08);color:var(--navy);border:1px solid var(--line)}
+.badge-green{background:rgba(61,184,139,0.12);color:#065F46;border:1px solid rgba(61,184,139,0.25)}
+.badge-red{background:rgba(225,93,93,0.12);color:#B91C1C;border:1px solid rgba(225,93,93,0.25)}
+.badge-amber{background:rgba(240,182,60,0.15);color:#92400E;border:1px solid rgba(240,182,60,0.3)}
+.badge-purple{background:rgba(100,84,192,0.10);color:#403294;border:1px solid rgba(100,84,192,0.2)}
+.badge-teal{background:rgba(0,141,166,0.10);color:#008DA6;border:1px solid rgba(0,141,166,0.2)}
+.badge-gray{background:rgba(15,48,83,0.05);color:#5E6C84;border:1px solid var(--line)}
+
+/* ─── ALERT BANNER ─── */
+.alert{border-left:3px solid var(--navy);background:rgba(15,48,83,0.04);border-radius:0 8px 8px 0;padding:.75rem 1rem;font-size:.78rem;color:var(--navy);opacity:.75;margin-bottom:1rem;line-height:1.6}
+.alert.red{border-color:var(--red);background:rgba(225,93,93,0.06);color:#B91C1C;opacity:1}
+.alert.amber{border-color:var(--amber);background:rgba(240,182,60,0.08);color:#78350F;opacity:1}
+.alert.green{border-color:var(--green);background:rgba(61,184,139,0.06);color:#065F46;opacity:1}
+.alert strong{font-weight:700}
+
+/* ─── GRID ─── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.1rem}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem}
+@media(max-width:768px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* ─── KPI ─── */
+.kpi{background:white;border:1px solid var(--line);border-radius:12px;padding:1.25rem 1.4rem}
+.kpi-label{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);opacity:.4;margin-bottom:.5rem}
+.kpi-value{font-size:2rem;font-weight:700;color:var(--navy);line-height:1}
+.kpi-sub{font-size:.65rem;color:var(--navy);opacity:.35;margin-top:.4rem}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:.6rem 1.2rem;border-radius:8px;border:none;font-family:'Inter',sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.btn:hover{opacity:.85}
+.btn-navy{background:var(--navy);color:white}
+.btn-outline{background:white;color:var(--navy);border:1.5px solid rgba(15,48,83,0.2)}
+.btn-sm{padding:.45rem .85rem;font-size:.7rem}
+.btn-red{background:var(--red);color:white}
+.btn-ghost{background:none;color:var(--navy);opacity:.5;font-size:.72rem;padding:.5rem;border:none;cursor:pointer;font-family:'Inter',sans-serif}
+
+/* ─── MODAL ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,48,83,0.35);display:flex;align-items:center;justify-content:center;z-index:999;padding:1.5rem}
+.modal{background:white;border-radius:16px;border:1px solid var(--line);width:100%;max-width:660px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(15,48,83,0.15)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.5rem;border-bottom:1px solid var(--line2);flex-shrink:0}
+.modal-title{font-size:.9rem;font-weight:700;color:var(--navy)}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#5E6C84;line-height:1;padding:2px 6px;border-radius:4px;font-family:'Inter',sans-serif;opacity:.5}
+.modal-close:hover{opacity:1;background:var(--soft)}
+.modal-body{padding:1.4rem 1.5rem;overflow-y:auto;flex:1}
+.modal-ft{padding:.9rem 1.5rem;border-top:1px solid var(--line2);display:flex;justify-content:flex-end;gap:.6rem;flex-shrink:0;background:var(--soft)}
+.mf{display:flex;flex-direction:column;gap:.32rem;margin-bottom:.85rem}
+.mf label{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);opacity:.45}
+.mf input,.mf select,.mf textarea{font-family:'Inter',sans-serif;font-size:.8rem;color:var(--charcoal);background:#fff;border:1.5px solid rgba(15,48,83,0.15);border-radius:8px;padding:.55rem .78rem;outline:none;width:100%;transition:border-color .15s}
+.mf input:focus,.mf select:focus,.mf textarea:focus{border-color:var(--navy)}
+.mf textarea{resize:vertical;min-height:60px}
+.mf select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='6' fill='none'%3E%3Cpath d='M1 1l4.5 4 4.5-4' stroke='%230F3053' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center}
+.mf-row{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+.mbtn{padding:.55rem 1.1rem;border-radius:7px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid transparent;font-family:'Inter',sans-serif;transition:opacity .15s}
+.mbtn:hover{opacity:.85}
+.mbtn-primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.mbtn-outline{background:#fff;color:var(--navy);border-color:rgba(15,48,83,0.2)}
+.mbtn-danger{background:rgba(225,93,93,0.1);color:#B91C1C;border-color:rgba(225,93,93,0.25)}
+
+/* ─── ACCESS MATRIX ─── */
+.matrix-wrap{overflow:auto;max-height:460px;border-radius:10px;border:1px solid var(--line);margin-bottom:16px}
+.mtbl{border-collapse:collapse;font-size:10px;min-width:900px}
+.mtbl th{background:var(--navy);color:#fff;padding:6px 9px;font-size:8px;font-weight:700;text-align:center;border:1px solid rgba(255,255,255,.12);white-space:nowrap;position:sticky;top:0;z-index:2}
+.mtbl th.uc{position:sticky;left:0;z-index:3;text-align:left;background:#0C2744;min-width:155px}
+.mtbl td{padding:5px 8px;text-align:center;border:1px solid rgba(15,48,83,0.08);font-size:12px}
+.mtbl td.uc{position:sticky;left:0;background:#fff;text-align:left;font-weight:600;border-right:2px solid var(--line);font-size:10px}
+.mtbl tr:hover td{background:rgba(15,48,83,0.02)}.mtbl tr:hover td.uc{background:var(--soft)}
+.m-y{background:rgba(61,184,139,0.12);color:#065F46}.m-n{background:rgba(225,93,93,0.08);color:#B91C1C}
+.m-p{background:rgba(240,182,60,0.12);color:#92400E}.m-q{background:rgba(240,182,60,0.06);color:#92400E}
+.m-r{background:rgba(15,48,83,0.04);color:#5E6C84}.m-a{background:rgba(100,84,192,0.1);color:#403294;font-weight:700}
+.leg-wrap{display:flex;flex-wrap:wrap;gap:8px;padding:.75rem 1rem;background:var(--soft);border-radius:8px;border:1px solid var(--line);margin-bottom:14px}
+.leg-i{display:flex;align-items:center;gap:4px;font-size:.68rem;color:var(--navy);opacity:.65}
+
+/* ─── EDIT MODE ─── */
+body.editing td:hover,.edit-mode td:hover{outline:1.5px dashed rgba(15,48,83,0.3);outline-offset:2px;cursor:text}
+body.editing td:focus,.edit-mode td:focus{outline:2px solid var(--navy);background:rgba(234,231,83,0.1)}
+.row-actions{display:none;gap:4px}
+.edit-mode .row-actions{display:flex}
+.row-act-btn{padding:2px 8px;border-radius:4px;font-size:.6rem;font-weight:600;cursor:pointer;border:1px solid;font-family:'Inter',sans-serif;transition:opacity .15s}
+.row-act-edit{background:rgba(15,48,83,0.06);color:var(--navy);border-color:rgba(15,48,83,0.2)}.row-act-edit:hover{opacity:.7}
+.row-act-del{background:rgba(225,93,93,0.08);color:#B91C1C;border-color:rgba(225,93,93,0.25)}.row-act-del:hover{opacity:.7}
+.add-row-btn{width:100%;padding:.75rem;background:var(--soft);border:2px dashed rgba(15,48,83,0.15);border-radius:0 0 10px 10px;font-size:.75rem;font-weight:600;color:var(--navy);opacity:.5;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;text-align:center;display:none}
+.add-row-btn:hover{border-color:var(--navy);opacity:.85;background:rgba(15,48,83,0.03)}
+.edit-mode .add-row-btn{display:block}
+
+/* ─── ROLE CARDS ─── */
+.role-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;margin-bottom:1rem}
+.role-card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.rc-head{padding:10px 14px;font-size:.8rem;font-weight:700}
+.rc-body{padding:10px 14px;border-top:1px solid var(--line2)}
+.rc-perm{display:flex;gap:6px;padding:3px 0;font-size:.78rem;color:var(--navy);opacity:.7;line-height:1.4}
+.ok{color:var(--green);font-weight:700;flex-shrink:0}.no{color:var(--red);font-weight:700;flex-shrink:0}
+
+/* ─── PMO FORM ─── */
+.pmo-hero{background:var(--navy);color:#fff;padding:1.75rem 1.8rem;border-radius:14px;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.pmo-hero::before{content:'';position:absolute;top:-50%;right:-8%;width:400px;height:400px;background:radial-gradient(circle,rgba(234,231,83,.1) 0%,transparent 62%);pointer-events:none}
+.pmo-hero .eyebrow{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--citron);margin-bottom:.4rem;font-weight:700}
+.pmo-hero h2{font-size:1.35rem;font-weight:600;line-height:1.2;margin-bottom:.35rem;color:#fff;border:none;padding:0;margin-top:0}
+.pmo-hero h2 .acc{color:var(--citron);font-weight:700}
+.pmo-hero p{color:rgba(255,255,255,.55);font-size:.78rem;max-width:560px;margin:0}
+.pmo-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.5rem;margin-bottom:1rem}
+.pmo-card-hd{display:flex;align-items:center;gap:.7rem;margin-bottom:1.2rem;padding-bottom:.9rem;border-bottom:1px solid var(--line2)}
+.pmo-card-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:var(--ice)}
+.pmo-card-hd-text .ct{font-size:.82rem;font-weight:700;color:var(--navy)}
+.pmo-card-hd-text .cd{font-size:.7rem;color:var(--navy);opacity:.45;margin-top:.1rem}
+.pmo-sdiv{display:flex;align-items:center;gap:.65rem;margin:1.2rem 0 .85rem}
+.pmo-sdiv span{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--navy);opacity:.35;white-space:nowrap}
+.pmo-sdiv::before,.pmo-sdiv::after{content:'';flex:1;height:1px;background:var(--line)}
+.pmo-g2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem}
+.pmo-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:660px){.pmo-g2,.pmo-g3{grid-template-columns:1fr}}
+.pf{display:flex;flex-direction:column;gap:.36rem;margin-bottom:.9rem}
+.pf:last-child{margin-bottom:0}
+.pf label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);opacity:.55}
+.pf label .req{color:var(--red);margin-left:2px}
+.pf input,.pf select,.pf textarea{font-family:'Inter',sans-serif;font-size:.8rem;color:var(--charcoal);background:#fff;border:1.5px solid rgba(15,48,83,0.15);border-radius:9px;padding:.58rem .82rem;transition:border-color .18s;outline:none;width:100%}
+.pf input:focus,.pf select:focus,.pf textarea:focus{border-color:var(--navy)}
+.pf select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230F3053' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center}
+.pmo-rl{font-size:.72rem;color:var(--red);margin-bottom:.85rem;opacity:.8}
+.pmo-rg{display:flex;flex-wrap:wrap;gap:.5rem}
+.pmo-ro{display:flex;align-items:center;gap:.45rem;padding:.45rem .8rem;border:1.5px solid rgba(15,48,83,0.12);border-radius:8px;font-size:.75rem;cursor:pointer;transition:all .15s;user-select:none}
+.pmo-ro:hover{border-color:var(--navy);background:rgba(15,48,83,0.03)}
+.pmo-ro.sel{background:rgba(15,48,83,0.06);border-color:var(--navy);font-weight:600}
+.pmo-ro input[type=radio],.pmo-cg input[type=checkbox]{display:none}
+.pmo-cg{display:flex;flex-wrap:wrap;gap:.45rem}
+.pmo-co{display:flex;align-items:center;gap:.4rem;padding:.4rem .75rem;border:1.5px solid rgba(15,48,83,0.12);border-radius:8px;font-size:.75rem;cursor:pointer;transition:all .15s;user-select:none}
+.pmo-co:hover{border-color:var(--navy);background:rgba(15,48,83,0.03)}
+.pmo-co.sel{background:rgba(15,48,83,0.06);border-color:var(--navy);font-weight:600}
+.pmo-actions{display:flex;align-items:center;gap:.85rem;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--line2)}
+.pmo-btn{background:var(--navy);color:#fff;border:none;border-radius:9px;padding:.65rem 1.5rem;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:opacity .15s}
+.pmo-btn:hover{opacity:.85}
+.pmo-btn .arr{color:var(--citron)}
+.pmo-ghost{background:none;border:none;color:var(--navy);opacity:.4;font-size:.78rem;font-family:'Inter',sans-serif;cursor:pointer;padding:.5rem}
+.pmo-ghost:hover{opacity:.7}
+
+/* ─── SHEET / REQUEST LOG ─── */
+.sheet-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;margin-top:1.5rem;overflow:hidden}
+.sheet-hd{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.5rem;border-bottom:1px solid var(--line2)}
+.sheet-hd-title{font-size:.85rem;font-weight:700;color:var(--navy)}
+.sheet-hd-sub{font-size:.7rem;color:var(--navy);opacity:.4;margin-top:.15rem}
+.sheet-count{font-size:.7rem;font-weight:600;color:var(--navy);opacity:.4;padding:3px 10px;background:var(--soft);border-radius:100px;border:1px solid var(--line)}
+.sheet-export-btn{font-size:.65rem;font-weight:700;padding:5px 12px;border-radius:100px;border:1.5px solid var(--line);background:white;color:var(--navy);cursor:pointer;font-family:'Inter',sans-serif;opacity:.55;transition:opacity .15s}
+.sheet-export-btn:hover{opacity:1}
+.sheet-tbl-wrap{overflow-x:auto}
+.sheet-tbl{width:100%;border-collapse:collapse;font-size:.72rem;min-width:1400px}
+.sheet-tbl th{background:var(--soft);padding:.6rem 1rem;text-align:left;font-size:.55rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--navy);opacity:.45;border-bottom:1px solid var(--line);white-space:nowrap}
+.sheet-tbl td{padding:.65rem 1rem;border-bottom:1px solid var(--line2);color:var(--charcoal);vertical-align:middle;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.sheet-tbl tr:last-child td{border-bottom:none}
+.sheet-empty{padding:2.5rem;text-align:center}
+.sei{font-size:2rem;margin-bottom:.6rem;opacity:.3}
+.sheet-empty p{font-size:.78rem;color:var(--navy);opacity:.4;line-height:1.6}
+.req-status{font-size:.62rem;font-weight:600;padding:3px 9px;border-radius:100px}
+.req-pending{background:rgba(240,182,60,0.15);color:#92400E}
+.req-approved{background:rgba(61,184,139,0.12);color:#065F46}
+.req-revoked{background:rgba(225,93,93,0.1);color:#B91C1C}
+
+/* ─── FOOTER ─── */
+.cf-footer{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:1rem 1.3rem;margin-top:1.5rem}
+.cf-footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:.75rem}
+.cf-footer-item{font-size:.72rem;color:var(--navy);opacity:.55}
+.cf-footer-item strong{color:var(--navy);opacity:1;display:block;margin-bottom:2px;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em}
+
+/* ─── TOAST ─── */
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.toast-bar{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:10px 16px;border-radius:100px;font-size:.72rem;font-weight:600;z-index:9999;display:none;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(15,48,83,.25);animation:toastIn .22s ease;max-width:320px}
+.toast-bar.show{display:flex}
+</style>
+</head>
+<body>
+
+<!-- ─── LOGIN ─── -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="lb-brand">
+      <div class="lb-icon">🔐</div>
+      <div><div class="lb-name">BombParty</div><div class="lb-sub">System Access Registry</div></div>
+    </div>
+    <div class="lb-title">Secure Admin Access</div>
+    <div class="lb-desc">Restricted to authorized administrators. All access attempts are monitored.</div>
+    <div class="lf"><label>Username</label><input type="text" id="loginUser" placeholder="Enter username" autocomplete="username"/></div>
+    <div class="lf"><label>Password</label>
+      <div style="position:relative">
+        <input type="password" id="loginPass" placeholder="••••••••••••" autocomplete="current-password" style="width:100%;padding-right:3rem"/>
+        <button type="button" id="showPassBtn" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:#5E6C84;padding:0;line-height:1">👁</button>
+      </div>
+    </div>
+    <button class="lb-btn" id="loginBtn">Sign In →</button>
+    <div class="lb-err" id="loginErr">Invalid username or password. Access denied.</div>
+    <div class="lb-note">🔒 Unauthorized access attempts are logged and escalated to IT Security.</div>
+  </div>
+</div>
+
+<!-- ─── APP ─── -->
+<div id="appShell" style="display:none">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-left">
+      <span class="nav-logo">BombParty</span>
+      <span class="nav-title">System Access Registry</span>
+    </div>
+    <div class="nav-right">
+      <button class="edit-toggle-btn" id="editToggleBtn" onclick="toggleEditMode()">✎ Edit Mode</button>
+      <div class="nav-pill"><span class="dot green"></span><span>CONFIGS · Active</span></div>
+      <div class="nav-date" id="nav-date"></div>
+      <div class="nav-av" id="tbAv">DF</div>
+      <span style="font-size:.7rem;color:var(--navy);opacity:.5" id="tbName"></span>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- TABS -->
+  <div class="tabs" id="tab-bar">
+    <button class="tab-btn active" onclick="showPage('home')"><span class="tab-num">01</span>Home</button>
+    <button class="tab-btn" onclick="showPage('overview')"><span class="tab-num">02</span>KPIs</button>
+    <button class="tab-btn" onclick="showPage('users')"><span class="tab-num">03</span>User Registry</button>
+    <button class="tab-btn" onclick="showPage('systems')"><span class="tab-num">04</span>System Inventory</button>
+    <button class="tab-btn" onclick="showPage('matrix')"><span class="tab-num">05</span>Access Matrix</button>
+    <button class="tab-btn" onclick="showPage('requests')"><span class="tab-num">06</span>Access Requests</button>
+    <button class="tab-btn" onclick="showPage('roles')"><span class="tab-num">07</span>Role Definitions</button>
+    <button class="tab-btn" onclick="showPage('policies')"><span class="tab-num">08</span>Governance</button>
+  </div>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- 01 HOME -->
+    <div class="pane active" id="page-home">
+      <div class="page-header">
+        <h2>🔐 System Access Registry</h2>
+        <p>Owner: Douglas Fernandes &amp; Alan Argollo &nbsp;·&nbsp; Review Cycle: Quarterly &nbsp;·&nbsp; Classification: <strong style="color:var(--red)">INTERNAL — CONTROLLED</strong><br>Centralized IAM reference for all users, systems, and access grants across the BombParty technology stack.</p>
+      </div>
+      <div class="alert amber"><strong>⚠️ Access Control Notice</strong> — This space contains privileged IAM data. Distribution is restricted to authorized administrators only. Unauthorized access attempts are logged and escalated to IT Security.</div>
+
+      <div class="g2" style="margin-bottom:1.25rem">
+        <div class="section-block" style="margin-bottom:0">
+          <div class="section-head"><div class="section-icon">📌</div><div class="section-head-text"><h3>About This Space</h3><span>What this registry covers and how to use it</span></div></div>
+          <div class="section-body">
+            <p style="font-size:.8rem;color:var(--navy);opacity:.65;line-height:1.7;margin-bottom:.85rem">The <strong>BombParty System Access Registry</strong> is the organization's centralized Identity and Access Management (IAM) reference. It tracks all users, systems, access grants, and privilege levels across the full technology stack — SaaS platforms, cloud infrastructure, internal tooling, and development environments.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem">
+              <span class="badge badge-red">🔒 Restricted</span>
+              <span class="badge badge-blue">📋 IAM</span>
+              <span class="badge badge-green">✅ Active</span>
+              <span class="badge badge-purple">Admin Only</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-block" style="margin-bottom:0">
+          <div class="section-head"><div class="section-icon">👥</div><div class="section-head-text"><h3>Registry Administrators</h3><span>Authorized to view and modify this registry</span></div></div>
+          <div class="section-body no-pad">
+            <div class="tbl-wrap"><table>
+              <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td class="td-bold">Douglas Fernandes</td><td class="td-muted">douglasf@bombparty.com</td><td><span class="badge badge-purple">Super Admin</span></td><td><span class="badge badge-green">● Active</span></td></tr>
+                <tr><td class="td-bold">Alan Argollo</td><td class="td-muted">alan@bombparty.com</td><td><span class="badge badge-purple">Super Admin</span></td><td><span class="badge badge-green">● Active</span></td></tr>
+                <tr><td class="td-bold">Kristin</td><td class="td-muted">kristin@bombparty.com</td><td><span class="badge badge-blue">Admin</span></td><td><span class="badge badge-green">● Active</span></td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head"><div class="section-icon">🗂</div><div class="section-head-text"><h3>Space Navigation</h3><span>Jump to any section of the registry</span></div></div>
+        <div class="section-body">
+          <div class="g4">
+            <button class="btn btn-outline" onclick="showPage('overview')">📊 KPIs &amp; Metrics</button>
+            <button class="btn btn-outline" onclick="showPage('users')">👤 User Registry</button>
+            <button class="btn btn-outline" onclick="showPage('systems')">🖥 System Inventory</button>
+            <button class="btn btn-outline" onclick="showPage('matrix')">📋 Access Matrix</button>
+            <button class="btn btn-outline" onclick="showPage('requests')">📝 Access Requests</button>
+            <button class="btn btn-outline" onclick="showPage('roles')">📜 Role Definitions</button>
+            <button class="btn btn-outline" onclick="showPage('policies')">⚙️ Governance</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cf-footer">
+        <div class="cf-footer-grid">
+          <div class="cf-footer-item"><strong>Space Owner</strong>Douglas Fernandes &amp; Alan Argollo</div>
+          <div class="cf-footer-item"><strong>Classification</strong><span style="color:var(--red);font-weight:700">INTERNAL — CONTROLLED</span></div>
+          <div class="cf-footer-item"><strong>Review Cycle</strong>Quarterly — Next: July 1, 2026</div>
+          <div class="cf-footer-item"><strong>Created</strong>April 28, 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 KPIs -->
+    <div class="pane" id="page-overview">
+      <div class="page-header">
+        <h2>📊 Overview &amp; KPIs</h2>
+        <p>Current registry health metrics — auto-calculated from User Registry and System Inventory data</p>
+      </div>
+      <div class="g4" style="margin-bottom:1.5rem">
+        <div class="kpi"><div class="kpi-label">Total Users</div><div class="kpi-value" data-ek="kpi-total">16</div><div class="kpi-sub">All personnel</div></div>
+        <div class="kpi"><div class="kpi-label">Active Accounts</div><div class="kpi-value" data-ek="kpi-active">12</div><div class="kpi-sub">Provisioned</div></div>
+        <div class="kpi"><div class="kpi-label">Revoked</div><div class="kpi-value" data-ek="kpi-revoked" style="color:var(--red)">1</div><div class="kpi-sub">Deprovisioned</div></div>
+        <div class="kpi"><div class="kpi-label">Pending Review</div><div class="kpi-value" data-ek="kpi-pending" style="color:var(--amber)">3</div><div class="kpi-sub">Awaiting action</div></div>
+        <div class="kpi"><div class="kpi-label">Systems Tracked</div><div class="kpi-value" data-ek="kpi-systems">12</div><div class="kpi-sub">All environments</div></div>
+        <div class="kpi"><div class="kpi-label">Privileged Accounts</div><div class="kpi-value" data-ek="kpi-priv">5</div><div class="kpi-sub">Admin &amp; above</div></div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head"><div class="section-icon">🏥</div><div class="section-head-text"><h3>Access Health Summary</h3><span>Current posture vs. targets</span></div></div>
+        <div class="section-body no-pad">
+          <div class="tbl-wrap"><table id="healthTable">
+            <thead><tr><th>Metric</th><th>Value</th><th>Target</th><th>Status</th></tr></thead>
+            <tbody id="healthBody"></tbody>
+          </table></div>
+          <button class="add-row-btn" onclick="addHealthRow()">+ Add Health Metric</button>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head"><div class="section-icon">📅</div><div class="section-head-text"><h3>Review Schedule</h3><span>Quarterly access review cadence</span></div></div>
+        <div class="section-body no-pad">
+          <div class="tbl-wrap"><table id="schedTable">
+            <thead><tr><th>Quarter</th><th>Period</th><th>Due Date</th><th>Lead</th><th>Status</th></tr></thead>
+            <tbody id="schedBody"></tbody>
+          </table></div>
+          <button class="add-row-btn" onclick="addSchedRow()">+ Add Review Cycle</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 USER REGISTRY -->
+    <div class="pane" id="page-users">
+      <div class="page-header">
+        <h2>👤 User Registry</h2>
+        <p>All personnel with system access — <span style="color:var(--red);font-weight:600">INTERNAL — CONTROLLED</span> — Contains PII and access control data. Do not share externally.</p>
+      </div>
+      <div class="section-block">
+        <div class="section-head">
+          <div class="section-icon">👤</div>
+          <div class="section-head-text"><h3>All Users</h3><span>Click any cell to edit. Use Add User to provision new accounts.</span></div>
+          <div style="margin-left:auto"><button class="btn btn-navy btn-sm edit-mode-only" style="display:none" onclick="openModal('userModal')">+ Add User</button></div>
+        </div>
+        <div class="section-body no-pad">
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>ID</th><th>Full Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Title</th><th>Status</th><th>Clearance</th><th>MFA</th><th>VPN</th><th>Start</th><th>Next Review</th><th id="userActHdr" style="display:none">Actions</th></tr></thead>
+            <tbody id="userTableBody"></tbody>
+          </table></div>
+          <button class="add-row-btn" onclick="openAddUser()">+ Add New User</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 SYSTEM INVENTORY -->
+    <div class="pane" id="page-systems">
+      <div class="page-header">
+        <h2>🖥 System Inventory</h2>
+        <p>All tracked systems across SaaS, infrastructure, internal tooling, and development environments</p>
+      </div>
+      <div class="section-block">
+        <div class="section-head">
+          <div class="section-icon">🖥</div>
+          <div class="section-head-text"><h3>All Systems</h3><span>Full technology stack — production and non-production</span></div>
+          <div style="margin-left:auto"><button class="btn btn-navy btn-sm edit-mode-only" style="display:none" onclick="openAddSystem()">+ Add System</button></div>
+        </div>
+        <div class="section-body no-pad">
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>ID</th><th>System Name</th><th>Type</th><th>Category</th><th>Env</th><th>Owner</th><th>IT Admin</th><th>Criticality</th><th>Data Class</th><th id="sysActHdr" style="display:none">Actions</th></tr></thead>
+            <tbody id="sysTableBody"></tbody>
+          </table></div>
+          <button class="add-row-btn" onclick="openAddSystem()">+ Add New System</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 ACCESS MATRIX -->
+    <div class="pane" id="page-matrix">
+      <div class="page-header">
+        <h2>📋 Access Matrix</h2>
+        <p>User × System access grid — click any cell to cycle access status</p>
+      </div>
+      <div class="leg-wrap">
+        <div class="leg-i"><span>✅</span> Full Access</div>
+        <div class="leg-i"><span>🛡</span> Admin</div>
+        <div class="leg-i"><span>⚠️</span> Partial</div>
+        <div class="leg-i"><span>⏳</span> Pending</div>
+        <div class="leg-i"><span>🚫</span> No Access</div>
+        <div class="leg-i"><span>🔒</span> Revoked</div>
+      </div>
+      <div class="matrix-wrap"><table class="mtbl" id="matrixTable">
+        <thead id="matrixHead"></thead>
+        <tbody id="matrixBody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- 06 ACCESS REQUESTS -->
+    <div class="pane" id="page-requests">
+      <div class="page-header">
+        <h2>📝 Access Requests</h2>
+        <p>Submit new provisioning requests, access modifications, or revocations. All submissions log instantly below.</p>
+      </div>
+      <div class="pmo-hero">
+        <div class="eyebrow">System User Access</div>
+        <h2 style="font-size:1.3rem;font-weight:600">Request, Modify, or <span class="acc">Revoke</span> System Access</h2>
+        <p>Use this form to provision new users, update existing access levels, or offboard team members.</p>
+      </div>
+      <p class="pmo-rl"><span>*</span> Required fields</p>
+      <div class="pmo-card">
+        <div class="pmo-card-hd"><div class="pmo-card-ico">🔐</div><div class="pmo-card-hd-text"><div class="ct">Access Request Details</div><div class="cd">New access, modification, or revocation</div></div></div>
+        <div class="pf"><label>Request Type <span class="req">*</span></label>
+          <div class="pmo-rg" id="ua_req_type">
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="New User Provisioning"/> 🆕 New User Provisioning</label>
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="Access Modification"/> ✏️ Access Modification</label>
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="Access Revocation"/> ❌ Access Revocation</label>
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="Temporary Access"/> ⏳ Temporary Access</label>
+            <label class="pmo-ro" onclick="selR('ua_req_type',this)"><input type="radio" name="ua_req_type" value="Role / Permission Change"/> 🔄 Role Change</label>
+          </div>
+        </div>
+        <div class="pmo-sdiv"><span>Requestor Info</span></div>
+        <div class="pmo-g2">
+          <div class="pf"><label>Requestor Name <span class="req">*</span></label><input id="ua_rname" placeholder="Full name"/></div>
+          <div class="pf"><label>Requestor Email <span class="req">*</span></label><input type="email" id="ua_remail" placeholder="you@bombparty.com"/></div>
+        </div>
+        <div class="pmo-sdiv"><span>User Being Provisioned</span></div>
+        <div class="pmo-g3">
+          <div class="pf"><label>First Name <span class="req">*</span></label><input id="ua_fname" placeholder="First name"/></div>
+          <div class="pf"><label>Last Name <span class="req">*</span></label><input id="ua_lname" placeholder="Last name"/></div>
+          <div class="pf"><label>Work Email <span class="req">*</span></label><input type="email" id="ua_email" placeholder="user@bombparty.com"/></div>
+        </div>
+        <div class="pmo-g3">
+          <div class="pf"><label>Job Title <span class="req">*</span></label><input id="ua_title" placeholder="e.g. Senior Engineer"/></div>
+          <div class="pf"><label>Department <span class="req">*</span></label>
+            <select id="ua_dept"><option value="">Select</option><option>Product</option><option>Engineering</option><option>Design</option><option>Marketing</option><option>Operations</option><option>Finance</option><option>Legal / Compliance</option><option>HR / People</option><option>Executive</option><option>Contractor / External</option></select>
+          </div>
+          <div class="pf"><label>Direct Manager <span class="req">*</span></label><input id="ua_manager" placeholder="Manager's full name"/></div>
+        </div>
+        <div class="pmo-g2">
+          <div class="pf"><label>Employment Type <span class="req">*</span></label>
+            <div class="pmo-rg" id="ua_emp">
+              <label class="pmo-ro" onclick="selR('ua_emp',this)"><input type="radio" name="ua_emp" value="Full-time"/> Full-time</label>
+              <label class="pmo-ro" onclick="selR('ua_emp',this)"><input type="radio" name="ua_emp" value="Part-time"/> Part-time</label>
+              <label class="pmo-ro" onclick="selR('ua_emp',this)"><input type="radio" name="ua_emp" value="Contractor"/> Contractor</label>
+              <label class="pmo-ro" onclick="selR('ua_emp',this)"><input type="radio" name="ua_emp" value="Vendor"/> Vendor</label>
+            </div>
+          </div>
+          <div class="pf"><label>Access Level</label>
+            <select id="ua_access_level"><option value="">Select</option><option>Read Only</option><option>Read / Write (Standard)</option><option>Elevated / Power User</option><option>Admin</option><option>Super Admin</option><option>Custom (see notes)</option></select>
+          </div>
+        </div>
+        <div class="pmo-sdiv"><span>Systems &amp; Applications</span></div>
+        <div class="pf"><label>Systems to Provision <span class="req">*</span></label>
+          <div class="pmo-cg" id="ua_systems">
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Exigo"/> Exigo</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="GetStream"/> GetStream</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Contentful"/> Contentful</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Jira"/> Jira</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Confluence"/> Confluence</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Slack"/> Slack</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="GitHub"/> GitHub</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="AWS"/> AWS</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="GCP"/> GCP</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Azure AD"/> Azure AD</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="Datadog"/> Datadog</label>
+            <label class="pmo-co" onclick="selC(this)"><input type="checkbox" value="All Systems"/> All Systems</label>
+          </div>
+        </div>
+        <div class="pmo-g2">
+          <div class="pf"><label>Start Date</label><input type="date" id="ua_start"/></div>
+          <div class="pf"><label>End Date (if temporary)</label><input type="date" id="ua_end"/></div>
+        </div>
+        <div class="pmo-sdiv"><span>Urgency &amp; Approval</span></div>
+        <div class="pmo-g2">
+          <div class="pf"><label>Urgency</label>
+            <div class="pmo-rg" id="ua_urgency">
+              <label class="pmo-ro" onclick="selR('ua_urgency',this)"><input type="radio" name="ua_urgency" value="Standard"/> Standard (3 days)</label>
+              <label class="pmo-ro" onclick="selR('ua_urgency',this)"><input type="radio" name="ua_urgency" value="Urgent"/> Urgent (24 hrs)</label>
+              <label class="pmo-ro" onclick="selR('ua_urgency',this)"><input type="radio" name="ua_urgency" value="Emergency"/> Emergency (4 hrs)</label>
+            </div>
+          </div>
+          <div class="pf"><label>Business Justification <span class="req">*</span></label><textarea id="ua_justify" style="min-height:68px" placeholder="Why is this access needed?"></textarea></div>
+        </div>
+        <div class="pf"><label>Approval Status</label>
+          <div class="pmo-rg" id="ua_approval">
+            <label class="pmo-ro" onclick="selR('ua_approval',this)"><input type="radio" name="ua_approval" value="Approved by Manager"/> ✅ Approved by Manager</label>
+            <label class="pmo-ro" onclick="selR('ua_approval',this)"><input type="radio" name="ua_approval" value="Pending Manager Approval"/> ⏳ Pending Manager Approval</label>
+            <label class="pmo-ro" onclick="selR('ua_approval',this)"><input type="radio" name="ua_approval" value="Executive Approval Required"/> 🔒 Executive Approval Required</label>
+          </div>
+        </div>
+        <div class="pf"><label>Additional Notes</label><textarea id="ua_notes" style="min-height:68px" placeholder="Special instructions, compliance notes..."></textarea></div>
+        <div class="pmo-actions">
+          <button class="pmo-btn" onclick="submitAccessRequest()">Submit Access Request <span class="arr">→</span></button>
+          <button class="pmo-ghost" onclick="clearRequestForm()">Clear Form</button>
+        </div>
+      </div>
+      <div class="sheet-wrap">
+        <div class="sheet-hd">
+          <div><div class="sheet-hd-title">📊 Access Request Registry</div><div class="sheet-hd-sub">Updates live after every submission</div></div>
+          <div style="display:flex;align-items:center;gap:.6rem">
+            <span class="sheet-count" id="reqCount">0 entries</span>
+            <button class="sheet-export-btn" onclick="exportRequests()">⬇ Export Excel</button>
+          </div>
+        </div>
+        <div class="sheet-tbl-wrap"><table class="sheet-tbl">
+          <thead><tr><th>#</th><th>Submitted</th><th>Type</th><th>User</th><th>Email</th><th>Dept</th><th>Title</th><th>Employment</th><th>Access Level</th><th>Systems</th><th>Start</th><th>End</th><th>Urgency</th><th>Approval</th><th>Requestor</th><th>Justification</th><th>Status</th></tr></thead>
+          <tbody id="reqTableBody">
+            <tr><td colspan="17"><div class="sheet-empty"><div class="sei">📋</div><p>No requests yet.<br>Complete the form above to log a request.</p></div></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- 07 ROLE DEFINITIONS -->
+    <div class="pane" id="page-roles">
+      <div class="page-header">
+        <h2>📜 Role Definitions</h2>
+        <p>Access roles, permission levels, and review requirements for all BombParty personnel</p>
+      </div>
+      <div class="section-block">
+        <div class="section-head"><div class="section-icon">🎭</div><div class="section-head-text"><h3>Role Summary</h3><span>Count, access level, MFA requirements, and review cadence by role</span></div></div>
+        <div class="section-body no-pad">
+          <div class="tbl-wrap"><table><thead><tr><th>Role</th><th>Count</th><th>Access Level</th><th>MFA</th><th>VPN</th><th>Review</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-purple">Super Admin</span></td><td>2</td><td>Full — all systems, all environments</td><td style="color:var(--green);font-weight:700">Yes</td><td style="color:var(--green);font-weight:700">Yes</td><td>Monthly</td></tr>
+              <tr><td><span class="badge badge-blue">Admin</span></td><td>4</td><td>Elevated — assigned systems + infra</td><td style="color:var(--green);font-weight:700">Yes</td><td style="color:var(--green);font-weight:700">Yes</td><td>Quarterly</td></tr>
+              <tr><td><span class="badge badge-teal">Developer</span></td><td>3</td><td>Dev scope — source control, CI/CD, sandbox</td><td style="color:var(--green);font-weight:700">Yes</td><td style="color:var(--green);font-weight:700">Yes</td><td>Quarterly</td></tr>
+              <tr><td><span class="badge badge-gray">Standard User</span></td><td>6</td><td>Business apps — role-appropriate only</td><td style="color:var(--green);font-weight:700">Yes</td><td style="color:var(--red);font-weight:700">No</td><td>Quarterly</td></tr>
+              <tr><td><span class="badge badge-amber">Vendor</span></td><td>1</td><td>Limited — specific systems, time-bounded</td><td style="color:var(--green);font-weight:700">Yes</td><td style="color:var(--red);font-weight:700">No</td><td>Per engagement</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+      <div class="role-grid">
+        <div class="role-card"><div class="rc-head" style="background:rgba(100,84,192,0.1);color:#403294">🛡 Super Admin</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span>Full access — all systems and environments</span></div><div class="rc-perm"><span class="ok">✓</span><span>User provisioning and deprovisioning</span></div><div class="rc-perm"><span class="ok">✓</span><span>Security policy enforcement and override</span></div><div class="rc-perm"><span class="ok">✓</span><span>Emergency break-glass protocol</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:rgba(15,48,83,0.07);color:var(--navy)">🔧 Admin</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span>Manage assigned systems and users</span></div><div class="rc-perm"><span class="ok">✓</span><span>Access staging and production environments</span></div><div class="rc-perm"><span class="no">✗</span><span>Cannot override IT Security controls</span></div><div class="rc-perm"><span class="no">✗</span><span>No cross-department system access</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:rgba(0,141,166,0.1);color:#008DA6">💻 Developer</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span>Source control read/write</span></div><div class="rc-perm"><span class="ok">✓</span><span>Dev, staging, sandbox environments</span></div><div class="rc-perm"><span class="no">✗</span><span>No HR or payroll system access</span></div><div class="rc-perm"><span class="no">✗</span><span>No financial system write access</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:var(--soft);color:var(--navy)">👤 Standard User</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span>Assigned business applications only</span></div><div class="rc-perm"><span class="ok">✓</span><span>SharePoint / M365 collaboration</span></div><div class="rc-perm"><span class="no">✗</span><span>No infrastructure or admin console access</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:rgba(240,182,60,0.12);color:#92400E">🔗 Vendor</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span>Time-limited access per SOW</span></div><div class="rc-perm"><span class="ok">✓</span><span>Specific approved systems only</span></div><div class="rc-perm"><span class="no">✗</span><span>No clearance-gated system access</span></div></div></div>
+        <div class="role-card"><div class="rc-head" style="background:rgba(61,184,139,0.1);color:#065F46">📊 Read-Only / Auditor</div><div class="rc-body"><div class="rc-perm"><span class="ok">✓</span><span>View-only on assigned systems</span></div><div class="rc-perm"><span class="ok">✓</span><span>Compliance reporting tool access</span></div><div class="rc-perm"><span class="no">✗</span><span>No write access — anywhere</span></div></div></div>
+      </div>
+    </div>
+
+    <!-- 08 GOVERNANCE -->
+    <div class="pane" id="page-policies">
+      <div class="page-header">
+        <h2>⚙️ Governance &amp; Policies</h2>
+        <p>Mandatory access control policies for all BombParty personnel — Review Cycle: Quarterly</p>
+      </div>
+      <div class="alert red"><strong>🔒 Policy Compliance</strong> — These policies are mandatory for all BombParty personnel. Non-compliance must be escalated to IT Security and HR. Violations may result in immediate access revocation and disciplinary action.</div>
+
+      <div class="section-block">
+        <div class="section-head"><div class="section-icon">📋</div><div class="section-head-text"><h3>Access Request Process</h3><span>Standard workflow for all provisioning requests</span></div></div>
+        <div class="section-body">
+          <ol id="policyList" style="padding-left:1.2rem;display:flex;flex-direction:column;gap:.5rem">
+            <li style="font-size:.82rem;color:var(--navy);line-height:1.6;opacity:.8">Requestor submits via the <strong>Access Requests</strong> tab in this registry.</li>
+            <li style="font-size:.82rem;color:var(--navy);line-height:1.6;opacity:.8">Direct manager is auto-notified for initial approval within <strong>2 business days</strong>.</li>
+            <li style="font-size:.82rem;color:var(--navy);line-height:1.6;opacity:.8">System owner reviews and approves or denies within <strong>2 business days</strong>.</li>
+            <li style="font-size:.82rem;color:var(--navy);line-height:1.6;opacity:.8">IT Security must co-approve all Admin-level and above requests.</li>
+            <li style="font-size:.82rem;color:var(--navy);line-height:1.6;opacity:.8">Provisioning is completed within <strong>3 business days</strong> of all approvals.</li>
+            <li style="font-size:.82rem;color:var(--navy);line-height:1.6;opacity:.8">Access grant is logged in the registry and access matrix updated same-day.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head"><div class="section-icon">🚪</div><div class="section-head-text"><h3>Offboarding &amp; Deprovisioning</h3><span>SLA: 4 hours from official departure</span></div></div>
+        <div class="section-body">
+          <div class="alert green" style="margin-bottom:0"><strong>✅ SLA: 4 Hours</strong> — All departing employee access must be revoked within <strong>4 hours</strong> of official departure. HR submits the ticket; IT Security executes.</div>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <div class="section-head"><div class="section-icon">🔐</div><div class="section-head-text"><h3>MFA &amp; Authentication Standards</h3><span>Required MFA type and remediation window by role</span></div></div>
+        <div class="section-body no-pad">
+          <div class="tbl-wrap"><table><thead><tr><th>Role</th><th>Required MFA Type</th><th>Remediation Window</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge badge-purple">Super Admin</span></td><td>Hardware token or FIDO2 (YubiKey preferred)</td><td><strong>Immediate</strong></td></tr>
+              <tr><td><span class="badge badge-blue">Admin</span></td><td>Hardware token or FIDO2</td><td>24 hours</td></tr>
+              <tr><td><span class="badge badge-teal">Developer</span></td><td>TOTP app or FIDO2</td><td>5 business days</td></tr>
+              <tr><td><span class="badge badge-gray">Standard User</span></td><td>TOTP app (Authenticator)</td><td>5 business days</td></tr>
+              <tr><td><span class="badge badge-amber">Vendor</span></td><td>TOTP or hardware token</td><td>Before provisioning</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="cf-footer">
+        <div class="cf-footer-grid">
+          <div class="cf-footer-item"><strong>Policy Owner</strong>Douglas Fernandes &amp; Alan Argollo</div>
+          <div class="cf-footer-item"><strong>Classification</strong><span style="color:var(--red);font-weight:700">INTERNAL — CONTROLLED</span></div>
+          <div class="cf-footer-item"><strong>Review Cycle</strong>Quarterly — Next: July 1, 2026</div>
+          <div class="cf-footer-item"><strong>Created</strong>April 28, 2026</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="userModal" style="display:none">
+  <div class="modal" style="max-width:660px">
+    <div class="modal-hd"><span class="modal-title" id="userModalTitle">Add New User</span><button class="modal-close" onclick="closeModal('userModal')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="um_editing_id"/>
+      <div class="mf-row"><div class="mf"><label>Full Name *</label><input id="um_name" placeholder="Jane Smith"/></div><div class="mf"><label>Email *</label><input id="um_email" placeholder="jane@bombparty.com"/></div></div>
+      <div class="mf-row"><div class="mf"><label>Department *</label><input id="um_dept" placeholder="Engineering"/></div><div class="mf"><label>Job Title *</label><input id="um_title" placeholder="Senior Developer"/></div></div>
+      <div class="mf-row">
+        <div class="mf"><label>Role</label><select id="um_role"><option>Standard</option><option>Developer</option><option>Admin</option><option>Super Admin</option><option>Vendor</option><option>Read-Only</option></select></div>
+        <div class="mf"><label>Status</label><select id="um_status"><option>Active</option><option>Pending</option><option>Partial</option><option>Revoked</option></select></div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>Clearance</label><select id="um_clearance"><option>None</option><option>Confidential</option><option>Secret</option><option>Top Secret</option></select></div>
+        <div class="mf"><label>Start Date</label><input type="date" id="um_start"/></div>
+      </div>
+      <div class="mf-row">
+        <div class="mf"><label>MFA Enabled</label><select id="um_mfa"><option>Yes</option><option>No</option></select></div>
+        <div class="mf"><label>VPN Access</label><select id="um_vpn"><option>Yes</option><option>No</option></select></div>
+      </div>
+      <div class="mf"><label>Next Review Date</label><input id="um_review" placeholder="2026-07-01"/></div>
+      <div class="mf"><label>Notes</label><textarea id="um_notes" placeholder="Any additional notes..."></textarea></div>
+    </div>
+    <div class="modal-ft"><button class="mbtn mbtn-outline" onclick="closeModal('userModal')">Cancel</button><button class="mbtn mbtn-primary" onclick="saveUser()">Save User</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="sysModal" style="display:none">
+  <div class="modal">
+    <div class="modal-hd"><span class="modal-title" id="sysModalTitle">Add New System</span><button class="modal-close" onclick="closeModal('sysModal')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="sm_editing_id"/>
+      <div class="mf-row"><div class="mf"><label>System Name *</label><input id="sm_name" placeholder="Slack"/></div><div class="mf"><label>Type</label><select id="sm_type"><option>SaaS</option><option>IaaS</option><option>PaaS</option><option>Internal</option><option>Network</option><option>Hybrid</option></select></div></div>
+      <div class="mf-row"><div class="mf"><label>Category</label><input id="sm_cat" placeholder="Communication"/></div><div class="mf"><label>Environment</label><select id="sm_env"><option>Prod</option><option>Non-Prod</option><option>Staging</option><option>Staging/Prod</option><option>Dev</option></select></div></div>
+      <div class="mf-row"><div class="mf"><label>System Owner</label><input id="sm_owner" placeholder="VP Engineering"/></div><div class="mf"><label>IT Admin</label><input id="sm_it" placeholder="John Smith"/></div></div>
+      <div class="mf-row">
+        <div class="mf"><label>Criticality</label><select id="sm_crit"><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+        <div class="mf"><label>Data Classification</label><select id="sm_data"><option>Internal</option><option>Confidential</option><option>Secret</option><option>Classified</option><option>PII</option><option>Financial</option><option>Public</option></select></div>
+      </div>
+      <div class="mf"><label>Notes</label><textarea id="sm_notes" placeholder="Additional notes..."></textarea></div>
+    </div>
+    <div class="modal-ft"><button class="mbtn mbtn-outline" onclick="closeModal('sysModal')">Cancel</button><button class="mbtn mbtn-primary" onclick="saveSystem()">Save System</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-hd"><span class="modal-title">Confirm Delete</span><button class="modal-close" onclick="closeModal('confirmModal')">×</button></div>
+    <div class="modal-body"><p id="confirmMsg" style="font-size:.85rem;color:var(--navy);line-height:1.5;opacity:.75"></p></div>
+    <div class="modal-ft"><button class="mbtn mbtn-outline" onclick="closeModal('confirmModal')">Cancel</button><button class="mbtn mbtn-danger" id="confirmOkBtn">Delete</button></div>
+  </div>
+</div>
+
+<div class="toast-bar" id="toastBar"></div>
+
+<script>
+// Set nav date
+(function(){
+  const el = document.getElementById('nav-date');
+  if(el) el.textContent = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).toUpperCase();
+})();
+</script>
+
+<script>
+
+/* ════════════════════════════════════
+   STATE & DEFAULT DATA
+════════════════════════════════════ */
+const CREDS = { 'admin': 'admin123' };
+let editMode = false;
+let saveTimer = null;
+
+const DEFAULT_USERS = [
+  {id:'USR-001',name:'Douglas Fernandes',email:'douglasf@bombparty.com',dept:'VR Programs',role:'Admin',title:'Project Manager II',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2022-03-14',review:'2025-07-15',notes:'PMP, CSM, PMI-ACP'},
+  {id:'USR-002',name:'Sarah Mitchell',email:'s.mitchell@bombparty.com',dept:'IT Security',role:'Super Admin',title:'Director of IT Security',status:'Active',clearance:'Top Secret',mfa:'Yes',vpn:'Yes',start:'2019-06-01',review:'2025-07-10',notes:'System owner'},
+  {id:'USR-003',name:'James Okafor',email:'j.okafor@bombparty.com',dept:'Development',role:'Developer',title:'Senior XR Engineer',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2021-08-23',review:'2025-07-01',notes:'VR engine lead'},
+  {id:'USR-004',name:'Maria Santos',email:'m.santos@bombparty.com',dept:'Development',role:'Developer',title:'Junior Developer',status:'Pending',clearance:'None',mfa:'Yes',vpn:'No',start:'2024-11-11',review:'2025-04-28',notes:'New hire'},
+  {id:'USR-005',name:'Kevin Tran',email:'k.tran@bombparty.com',dept:'Finance',role:'Standard',title:'Financial Analyst',status:'Active',clearance:'None',mfa:'Yes',vpn:'No',start:'2020-04-17',review:'2025-07-20',notes:''},
+  {id:'USR-006',name:'Lisa Park',email:'l.park@bombparty.com',dept:'HR',role:'Standard',title:'HR Manager',status:'Active',clearance:'None',mfa:'Yes',vpn:'No',start:'2018-09-03',review:'2025-07-18',notes:''},
+  {id:'USR-007',name:'Carlos Rivera',email:'c.rivera@bombparty.com',dept:'IT Security',role:'Admin',title:'Systems Administrator',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2020-11-30',review:'2025-07-10',notes:'Infrastructure admin'},
+  {id:'USR-008',name:'Tanya Brooks',email:'t.brooks@bombparty.com',dept:'VR Programs',role:'Standard',title:'Content Designer',status:'Active',clearance:'None',mfa:'Yes',vpn:'No',start:'2023-02-14',review:'2025-07-05',notes:''},
+  {id:'USR-009',name:'Marcus Lee',email:'m.lee@bombparty.com',dept:'Operations',role:'Standard',title:'Operations Analyst',status:'Revoked',clearance:'None',mfa:'No',vpn:'No',start:'2019-01-15',review:'N/A',notes:'Departed 2024-06-30'},
+  {id:'USR-010',name:'Rachel Kim',email:'r.kim@bombparty.com',dept:'Compliance',role:'Admin',title:'Compliance Officer',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2021-05-10',review:'2025-07-12',notes:''},
+  {id:'USR-011',name:'Derek Walsh',email:'d.walsh@bombparty.com',dept:'Development',role:'Developer',title:'DevOps Engineer',status:'Active',clearance:'Secret',mfa:'Yes',vpn:'Yes',start:'2022-07-19',review:'2025-07-10',notes:''},
+  {id:'USR-012',name:'Nina Patel',email:'n.patel@bombparty.com',dept:'VR Programs',role:'Standard',title:'QA Analyst',status:'Active',clearance:'None',mfa:'Yes',vpn:'No',start:'2023-06-05',review:'2025-07-22',notes:''},
+  {id:'USR-013',name:'Tom Hendricks',email:'t.hendricks@bombparty.com',dept:'Executive',role:'Super Admin',title:'CTO',status:'Active',clearance:'Top Secret',mfa:'Yes',vpn:'Yes',start:'2017-03-01',review:'2025-07-05',notes:''},
+  {id:'USR-014',name:'Amy Chang',email:'a.chang@bombparty.com',dept:'Finance',role:'Standard',title:'Budget Coordinator',status:'Partial',clearance:'None',mfa:'Yes',vpn:'No',start:'2022-09-27',review:'2025-04-10',notes:''},
+  {id:'USR-015',name:'IronNet Security (Vendor)',email:'vendor@ironnet.com',dept:'External',role:'Vendor',title:'Security Consultant',status:'Pending',clearance:'None',mfa:'Yes',vpn:'No',start:'2025-03-01',review:'2025-06-01',notes:'NDA on file'},
+  {id:'USR-016',name:'Kristin — Admin',email:'kristin@bombparty.com',dept:'Administration',role:'Admin',title:'Registry Administrator',status:'Active',clearance:'None',mfa:'Yes',vpn:'Yes',start:'2025-04-28',review:'2025-07-28',notes:''},
+];
+
+const DEFAULT_SYSTEMS = [
+  {id:'SYS-001',name:'Jira / Confluence',type:'SaaS',cat:'Project Mgmt',env:'Prod',owner:'VP Programs',it:'Carlos Rivera',crit:'High',data:'Internal',notes:'Primary PM platform'},
+  {id:'SYS-002',name:'Azure DevOps',type:'SaaS',cat:'Dev & CI/CD',env:'Prod',owner:'CTO',it:'Derek Walsh',crit:'Critical',data:'Confidential',notes:'Source control & pipelines'},
+  {id:'SYS-003',name:'AWS GovCloud',type:'IaaS',cat:'Cloud Infra',env:'Prod',owner:'CTO',it:'Carlos Rivera',crit:'Critical',data:'Secret',notes:'Primary cloud infra'},
+  {id:'SYS-004',name:'UE Build Server',type:'Internal',cat:'VR Build',env:'Staging/Prod',owner:'Dev Lead',it:'Derek Walsh',crit:'High',data:'Confidential',notes:'VR build farm'},
+  {id:'SYS-005',name:'ADP Workforce',type:'SaaS',cat:'HR / Payroll',env:'Prod',owner:'VP HR',it:'Lisa Park',crit:'Critical',data:'PII',notes:'HR & payroll'},
+  {id:'SYS-006',name:'NetSuite ERP',type:'SaaS',cat:'Finance',env:'Prod',owner:'CFO',it:'Carlos Rivera',crit:'High',data:'Financial',notes:'Finance & budget'},
+  {id:'SYS-007',name:'SharePoint M365',type:'SaaS',cat:'Collaboration',env:'Prod',owner:'IT Director',it:'Carlos Rivera',crit:'Medium',data:'Internal',notes:'Doc management'},
+  {id:'SYS-008',name:'CrowdStrike',type:'SaaS',cat:'Security (EDR)',env:'Prod',owner:'IT Sec. Dir.',it:'Sarah Mitchell',crit:'Critical',data:'Classified',notes:'Endpoint protection'},
+  {id:'SYS-009',name:'Salesforce CRM',type:'SaaS',cat:'CRM',env:'Prod',owner:'VP Sales',it:'Carlos Rivera',crit:'Medium',data:'Confidential',notes:'Client management'},
+  {id:'SYS-010',name:'VPN (Cisco)',type:'Network',cat:'Remote Access',env:'Prod',owner:'IT Director',it:'Carlos Rivera',crit:'Critical',data:'Internal',notes:'Required for remote work'},
+  {id:'SYS-011',name:'Dev Sandbox',type:'Internal',cat:'Dev Env',env:'Non-Prod',owner:'Dev Lead',it:'Derek Walsh',crit:'Low',data:'Internal',notes:'Isolated dev env'},
+  {id:'SYS-012',name:'Rippling HRIS',type:'SaaS',cat:'IT Mgmt',env:'Prod',owner:'VP HR',it:'Sarah Mitchell',crit:'High',data:'PII',notes:'User provisioning'},
+];
+
+const DEFAULT_MATRIX = {
+  'USR-001':['✅','⚠️','⚠️','✅','🚫','⚠️','✅','🚫','⚠️','✅','✅','🚫'],
+  'USR-002':['🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡'],
+  'USR-003':['✅','✅','⚠️','✅','🚫','🚫','✅','🚫','🚫','✅','✅','🚫'],
+  'USR-004':['⏳','⏳','🚫','⏳','🚫','🚫','⏳','🚫','🚫','🚫','⏳','🚫'],
+  'USR-005':['🚫','🚫','🚫','🚫','🚫','⚠️','✅','🚫','🚫','🚫','🚫','🚫'],
+  'USR-006':['🚫','🚫','🚫','🚫','✅','🚫','✅','🚫','🚫','🚫','🚫','✅'],
+  'USR-007':['🛡','🛡','🛡','🛡','🚫','✅','✅','⚠️','✅','🛡','🛡','✅'],
+  'USR-008':['✅','🚫','🚫','✅','🚫','🚫','✅','🚫','🚫','🚫','✅','🚫'],
+  'USR-009':['🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒','🔒'],
+  'USR-010':['✅','⚠️','⚠️','⚠️','⚠️','⚠️','✅','⚠️','⚠️','✅','✅','⚠️'],
+  'USR-011':['✅','✅','✅','✅','🚫','🚫','✅','🚫','🚫','✅','✅','🚫'],
+  'USR-012':['✅','🚫','🚫','✅','🚫','🚫','✅','🚫','🚫','🚫','✅','🚫'],
+  'USR-013':['🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡'],
+  'USR-014':['🚫','🚫','🚫','🚫','🚫','⚠️','✅','🚫','🚫','🚫','🚫','🚫'],
+  'USR-015':['🚫','🚫','🚫','🚫','🚫','🚫','⏳','⏳','🚫','⏳','🚫','🚫'],
+  'USR-016':['🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡','🛡'],
+};
+
+const DEFAULT_HEALTH = [
+  {metric:'MFA Enrollment Rate',value:'93% (14/15 active)',target:'100%',status:'Needs Action'},
+  {metric:'VPN Coverage (Privileged)',value:'100%',target:'100%',status:'On Target'},
+  {metric:'Accounts Past Review Date',value:'2',target:'0',status:'Needs Action'},
+  {metric:'Vendor Accounts Active',value:'1',target:'< 5',status:'On Target'},
+  {metric:'Deprovisioning SLA (4hr)',value:'100% compliant',target:'100%',status:'On Target'},
+  {metric:'Open Access Requests',value:'3 pending',target:'0 past 5 days',status:'Needs Action'},
+];
+
+const DEFAULT_SCHED = [
+  {quarter:'Q1 2026',period:'Jan 1 – Mar 31',due:'Apr 15, 2026',lead:'Douglas Fernandes',status:'Completed'},
+  {quarter:'Q2 2026',period:'Apr 1 – Jun 30',due:'Jul 15, 2026',lead:'Alan Argollo',status:'In Progress'},
+  {quarter:'Q3 2026',period:'Jul 1 – Sep 30',due:'Oct 15, 2026',lead:'TBD',status:'Upcoming'},
+  {quarter:'Q4 2026',period:'Oct 1 – Dec 31',due:'Jan 15, 2027',lead:'TBD',status:'Upcoming'},
+];
+
+/* ── Load/save from localStorage ── */
+function ls(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; } }
+function ss(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+
+let users    = ls('bp_users',    DEFAULT_USERS);
+let systems  = ls('bp_systems',  DEFAULT_SYSTEMS);
+let matrix   = ls('bp_matrix',   DEFAULT_MATRIX);
+let health   = ls('bp_health',   DEFAULT_HEALTH);
+let sched    = ls('bp_sched',    DEFAULT_SCHED);
+let inlineEd = ls('bp_inline',   {});
+let requests = [];
+let reqCount = 0;
+
+/* ════════════════════════════════════
+   LOGIN
+════════════════════════════════════ */
+function toggleShowPass() {
+  const inp = document.getElementById('loginPass');
+  const btn = document.getElementById('showPassBtn');
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const matchKey = Object.keys(CREDS).find(k => k.toLowerCase() === u.toLowerCase());
+  if (matchKey && CREDS[matchKey] === p) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appShell').style.display = 'block';
+    document.getElementById('tbName').textContent = matchKey;
+    document.getElementById('tbAv').textContent = matchKey.slice(0,2).toUpperCase();
+    document.getElementById('loginErr').style.display = 'none';
+    renderAll();
+    loadInlineEdits();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('loginPass').value = '';
+  }
+}
+function doLogout() {
+  if (editMode) toggleEditMode();
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginErr').style.display = 'none';
+}
+
+/* ════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════ */
+const PAGE_TITLES = {home:'System Access Registry',overview:'Overview & KPIs',users:'User Registry',systems:'System Inventory',matrix:'Access Matrix',requests:'Access Requests',roles:'Role Definitions',policies:'Governance & Policies'};
+function showPage(id) {
+  document.querySelectorAll('.pane').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
+  const t = document.getElementById('page-' + id);
+  if(t){ t.classList.add('active'); t.style.display='block'; }
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const oc = btn.getAttribute('onclick')||'';
+    btn.classList.toggle('active', oc.includes("'"+id+"'") || oc.includes('"'+id+'"'));
+  });
+  const m = document.querySelector('.main'); if(m) m.scrollTo(0,0);
+  if(id==='overview' && window.updateRegistryMetrics) window.updateRegistryMetrics();
+}
+
+/* ════════════════════════════════════
+   RENDER FUNCTIONS
+════════════════════════════════════ */
+function renderAll() {
+  renderUsers();
+  renderSystems();
+  renderMatrix();
+  renderHealth();
+  renderSched();
+}
+
+/* Tags */
+const rolTag  = r => ({'Super Admin':'tag-purple','Admin':'tag-blue','Developer':'tag-teal','Standard':'tag-gray','Vendor':'tag-orange','Read-Only':'tag-gray'}[r]||'tag-gray');
+const statLbl = s => ({'Active':'lbl-green','Pending':'lbl-amber','Partial':'lbl-amber','Revoked':'lbl-red'}[s]||'lbl-gray');
+const critTag = c => ({'Critical':'tag-red','High':'tag-orange','Medium':'tag-gray','Low':'tag-green'}[c]||'tag-gray');
+const dataTag = d => (d==='Secret'||d==='Classified'?'tag-red':d==='PII'||d==='Financial'?'tag-orange':'tag-gray');
+const statusTxt = s => `<span class="lbl ${statLbl(s)}">${s}</span>`;
+const envTag  = e => (e==='Prod'?'tag-blue':e==='Non-Prod'?'tag-gray':'tag-orange');
+
+function renderUsers() {
+  const em = editMode;
+  const hdr = document.getElementById('userActHdr');
+  if (hdr) hdr.style.display = em ? '' : 'none';
+  document.getElementById('userTableBody').innerHTML = users.map(u => `
+    <tr>
+      <td class="mono">${u.id}</td>
+      <td ${em?'contenteditable="true"':''}><strong>${u.name}</strong></td>
+      <td class="mono" style="font-size:9px" ${em?'contenteditable="true"':''}>${u.email}</td>
+      <td ${em?'contenteditable="true"':''}>${u.dept}</td>
+      <td><span class="tag ${rolTag(u.role)}">${u.role}</span></td>
+      <td ${em?'contenteditable="true"':''}>${u.title}</td>
+      <td>${statusTxt(u.status)}</td>
+      <td>${u.clearance==='None'?'—':`<span class="tag tag-red">${u.clearance}</span>`}</td>
+      <td style="text-align:center;color:${u.mfa==='Yes'?'#006644':'#BF2600'};font-weight:700">${u.mfa}</td>
+      <td style="text-align:center;color:${u.vpn==='Yes'?'#006644':'#BF2600'};font-weight:700">${u.vpn}</td>
+      <td ${em?'contenteditable="true"':''}>${u.start}</td>
+      <td ${em?'contenteditable="true"':''}>${u.review}</td>
+      ${em?`<td><div class="row-actions" style="display:flex"><button class="row-act-btn row-act-edit" onclick="openEditUser('${u.id}')">Edit</button><button class="row-act-btn row-act-del" onclick="deleteUser('${u.id}')">Del</button></div></td>`:''}
+    </tr>`).join('');
+}
+
+function renderSystems() {
+  const em = editMode;
+  const hdr = document.getElementById('sysActHdr');
+  if (hdr) hdr.style.display = em ? '' : 'none';
+  document.getElementById('sysTableBody').innerHTML = systems.map(s => `
+    <tr>
+      <td class="mono">${s.id}</td>
+      <td ${em?'contenteditable="true"':''}><strong>${s.name}</strong></td>
+      <td ${em?'contenteditable="true"':''}>${s.type}</td>
+      <td ${em?'contenteditable="true"':''}>${s.cat}</td>
+      <td><span class="tag ${envTag(s.env)}">${s.env}</span></td>
+      <td ${em?'contenteditable="true"':''}>${s.owner}</td>
+      <td ${em?'contenteditable="true"':''}>${s.it}</td>
+      <td><span class="tag ${critTag(s.crit)}">${s.crit}</span></td>
+      <td><span class="tag ${dataTag(s.data)}">${s.data}</span></td>
+      ${em?`<td><div class="row-actions" style="display:flex"><button class="row-act-btn row-act-edit" onclick="openEditSystem('${s.id}')">Edit</button><button class="row-act-btn row-act-del" onclick="deleteSystem('${s.id}')">Del</button></div></td>`:''}
+    </tr>`).join('');
+}
+
+const MATRIX_VALS = ['✅','⚠️','⏳','🚫','🔒','🛡'];
+const mCls = v => ({'✅':'m-y','🚫':'m-n','⚠️':'m-p','⏳':'m-q','🔒':'m-r','🛡':'m-a'}[v]||'');
+function nextMV(v) { const i=MATRIX_VALS.indexOf(v); return MATRIX_VALS[(i+1)%MATRIX_VALS.length]; }
+
+function renderMatrix() {
+  const head = document.getElementById('matrixHead');
+  const body = document.getElementById('matrixBody');
+  head.innerHTML = `<tr><th class="uc">User</th>${systems.map(s=>`<th title="${s.name}">${s.name.length>10?s.name.slice(0,10)+'…':s.name}</th>`).join('')}</tr>`;
+  body.innerHTML = users.map(u => {
+    const row = matrix[u.id] || [];
+    while(row.length < systems.length) row.push('🚫');
+    return `<tr>
+      <td class="uc"><div style="font-weight:600;font-size:10px">${u.name.split(' ').slice(0,2).join(' ')}</div><div class="mono" style="font-size:9px">${u.id}</div></td>
+      ${systems.map((s,i)=>`<td class="${mCls(row[i]||'🚫')}" style="cursor:pointer" onclick="toggleMatrix('${u.id}',${i})" title="Click to change">${row[i]||'🚫'}</td>`).join('')}
+    </tr>`;
+  }).join('');
+}
+
+function toggleMatrix(uid, idx) {
+  if (!matrix[uid]) matrix[uid] = systems.map(()=>'🚫');
+  while(matrix[uid].length <= idx) matrix[uid].push('🚫');
+  matrix[uid][idx] = nextMV(matrix[uid][idx]);
+  ss('bp_matrix', matrix);
+  renderMatrix();
+  showToast('✓ Access updated');
+}
+
+function renderHealth() {
+  const em = editMode;
+  document.getElementById('healthBody').innerHTML = health.map((r,i) => `
+    <tr>
+      <td ${em?'contenteditable="true"':''}>${r.metric}</td>
+      <td ${em?'contenteditable="true"':''}>${r.value}</td>
+      <td ${em?'contenteditable="true"':''}>${r.target}</td>
+      <td>${r.status==='On Target'?'<span class="lbl lbl-green">On Target</span>':'<span class="lbl lbl-amber">Needs Action</span>'}</td>
+      ${em?`<td><div class="row-actions" style="display:flex"><button class="row-act-btn row-act-del" onclick="delHealthRow(${i})">Del</button></div></td>`:''}
+    </tr>`).join('');
+  const th = document.querySelector('#healthTable thead tr th:last-child');
+  if (th) th.style.display = em ? '' : 'none';
+}
+
+function renderSched() {
+  const em = editMode;
+  document.getElementById('schedBody').innerHTML = sched.map((r,i) => {
+    const scls = {Completed:'lbl-green','In Progress':'lbl-blue',Upcoming:'lbl-gray'}[r.status]||'lbl-gray';
+    return `<tr>
+      <td ${em?'contenteditable="true"':''}>${r.quarter}</td>
+      <td ${em?'contenteditable="true"':''}>${r.period}</td>
+      <td ${em?'contenteditable="true"':''}>${r.due}</td>
+      <td ${em?'contenteditable="true"':''}>${r.lead}</td>
+      <td><span class="lbl ${scls}">${r.status}</span></td>
+      ${em?`<td><div class="row-actions" style="display:flex"><button class="row-act-btn row-act-del" onclick="delSchedRow(${i})">Del</button></div></td>`:''}
+    </tr>`;
+  }).join('');
+  const th = document.querySelector('#schedTable thead tr th:last-child');
+  if (th) th.style.display = em ? '' : 'none';
+}
+
+/* ════════════════════════════════════
+   EDIT MODE (Option A — Inline)
+════════════════════════════════════ */
+function toggleEditMode() {
+  editMode = !editMode;
+  const btn = document.getElementById('editToggleBtn');
+  if (editMode) {
+    document.body.classList.add('edit-mode');
+    btn.textContent = '✓ Done Editing';
+    btn.classList.add('active');
+    document.querySelectorAll('[data-ek]').forEach(el => el.setAttribute('contenteditable','true'));
+    document.querySelectorAll('#userActHdr,#sysActHdr').forEach(el => el.style.display='');
+    document.querySelectorAll('.add-row-btn').forEach(el => el.style.display='block');
+    document.querySelectorAll('.row-actions').forEach(el => el.style.display='flex');
+    showToast('✎ Edit Mode ON — click any text or cell to edit');
+  } else {
+    document.body.classList.remove('edit-mode');
+    btn.textContent = '✎ Edit Mode';
+    btn.classList.remove('active');
+    document.querySelectorAll('[data-ek]').forEach(el => el.setAttribute('contenteditable','false'));
+    document.querySelectorAll('#userActHdr,#sysActHdr').forEach(el => el.style.display='none');
+    document.querySelectorAll('.add-row-btn').forEach(el => el.style.display='none');
+    document.querySelectorAll('.row-actions').forEach(el => el.style.display='none');
+    saveInlineEdits();
+    showToast('✓ Changes saved');
+  }
+  renderAll();
+}
+
+function saveInlineEdits() {
+  document.querySelectorAll('[data-ek]').forEach(el => {
+    const key = el.getAttribute('data-ek');
+    inlineEd[key] = el.innerHTML;
+  });
+  ss('bp_inline', inlineEd);
+}
+
+function loadInlineEdits() {
+  const saved = ls('bp_inline', {});
+  Object.entries(saved).forEach(([key, val]) => {
+    const el = document.querySelector(`[data-ek="${key}"]`);
+    if (el) el.innerHTML = val;
+  });
+}
+
+// Auto-save inline edits on input
+document.addEventListener('input', e => {
+  if (!editMode) return;
+  if (e.target.hasAttribute('data-ek')) {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { saveInlineEdits(); }, 1200);
+  }
+});
+
+/* ════════════════════════════════════
+   USER CRUD (Option B — Section Edit)
+════════════════════════════════════ */
+function genId(pfx, list) {
+  const nums = list.map(x=>parseInt(x.id.split('-')[1]||0)).filter(Boolean);
+  return `${pfx}-${String((nums.length?Math.max(...nums):0)+1).padStart(3,'0')}`;
+}
+
+function openAddUser() { openModal('userModal'); document.getElementById('userModalTitle').textContent='Add New User'; document.getElementById('um_editing_id').value=''; clearModalForm('um_'); document.getElementById('um_start').value=new Date().toISOString().split('T')[0]; }
+function openEditUser(id) {
+  const u = users.find(x=>x.id===id); if(!u)return;
+  openModal('userModal'); document.getElementById('userModalTitle').textContent='Edit User — '+u.name;
+  document.getElementById('um_editing_id').value=id;
+  document.getElementById('um_name').value=u.name; document.getElementById('um_email').value=u.email;
+  document.getElementById('um_dept').value=u.dept; document.getElementById('um_title').value=u.title;
+  document.getElementById('um_role').value=u.role; document.getElementById('um_status').value=u.status;
+  document.getElementById('um_clearance').value=u.clearance; document.getElementById('um_start').value=u.start;
+  document.getElementById('um_mfa').value=u.mfa; document.getElementById('um_vpn').value=u.vpn;
+  document.getElementById('um_review').value=u.review; document.getElementById('um_notes').value=u.notes||'';
+}
+function saveUser() {
+  const name = document.getElementById('um_name').value.trim();
+  const email = document.getElementById('um_email').value.trim();
+  if(!name||!email){showToast('Name and email are required',true);return;}
+  const eid = document.getElementById('um_editing_id').value;
+  const u = {id:eid||genId('USR',users),name,email,dept:document.getElementById('um_dept').value.trim(),title:document.getElementById('um_title').value.trim(),role:document.getElementById('um_role').value,status:document.getElementById('um_status').value,clearance:document.getElementById('um_clearance').value,start:document.getElementById('um_start').value,mfa:document.getElementById('um_mfa').value,vpn:document.getElementById('um_vpn').value,review:document.getElementById('um_review').value.trim(),notes:document.getElementById('um_notes').value.trim()};
+  if(eid) { users = users.map(x=>x.id===eid?u:x); showToast('✓ User updated'); }
+  else { users.push(u); matrix[u.id]=systems.map(()=>'🚫'); ss('bp_matrix',matrix); showToast('✓ User added'); }
+  ss('bp_users',users); renderUsers(); renderMatrix(); closeModal('userModal');
+}
+function deleteUser(id) {
+  const u = users.find(x=>x.id===id); if(!u)return;
+  confirm2(`Delete user "${u.name}"? This will also remove their access matrix row.`, ()=>{
+    users=users.filter(x=>x.id!==id); delete matrix[id];
+    ss('bp_users',users); ss('bp_matrix',matrix); renderUsers(); renderMatrix(); showToast('✓ User deleted');
+  });
+}
+
+/* ════════════════════════════════════
+   SYSTEM CRUD
+════════════════════════════════════ */
+function openAddSystem() { openModal('sysModal'); document.getElementById('sysModalTitle').textContent='Add New System'; document.getElementById('sm_editing_id').value=''; clearModalForm('sm_'); }
+function openEditSystem(id) {
+  const s = systems.find(x=>x.id===id); if(!s)return;
+  openModal('sysModal'); document.getElementById('sysModalTitle').textContent='Edit System — '+s.name;
+  document.getElementById('sm_editing_id').value=id;
+  document.getElementById('sm_name').value=s.name; document.getElementById('sm_type').value=s.type;
+  document.getElementById('sm_cat').value=s.cat; document.getElementById('sm_env').value=s.env;
+  document.getElementById('sm_owner').value=s.owner; document.getElementById('sm_it').value=s.it;
+  document.getElementById('sm_crit').value=s.crit; document.getElementById('sm_data').value=s.data;
+  document.getElementById('sm_notes').value=s.notes||'';
+}
+function saveSystem() {
+  const name = document.getElementById('sm_name').value.trim();
+  if(!name){showToast('System name is required',true);return;}
+  const eid = document.getElementById('sm_editing_id').value;
+  const s = {id:eid||genId('SYS',systems),name,type:document.getElementById('sm_type').value,cat:document.getElementById('sm_cat').value.trim(),env:document.getElementById('sm_env').value,owner:document.getElementById('sm_owner').value.trim(),it:document.getElementById('sm_it').value.trim(),crit:document.getElementById('sm_crit').value,data:document.getElementById('sm_data').value,notes:document.getElementById('sm_notes').value.trim()};
+  if(eid) { systems=systems.map(x=>x.id===eid?s:x); showToast('✓ System updated'); }
+  else { systems.push(s); Object.keys(matrix).forEach(uid=>{ if(!matrix[uid]) matrix[uid]=[]; matrix[uid].push('🚫'); }); ss('bp_matrix',matrix); showToast('✓ System added'); }
+  ss('bp_systems',systems); renderSystems(); renderMatrix(); closeModal('sysModal');
+}
+function deleteSystem(id) {
+  const s = systems.find(x=>x.id===id); if(!s)return;
+  confirm2(`Delete system "${s.name}"? This removes it from the access matrix too.`, ()=>{
+    const idx=systems.findIndex(x=>x.id===id);
+    systems=systems.filter(x=>x.id!==id);
+    Object.keys(matrix).forEach(uid=>{ if(matrix[uid]) matrix[uid].splice(idx,1); });
+    ss('bp_systems',systems); ss('bp_matrix',matrix); renderSystems(); renderMatrix(); showToast('✓ System deleted');
+  });
+}
+
+/* ── Health/Sched row management ── */
+function addHealthRow() { health.push({metric:'New Metric',value:'—',target:'—',status:'On Target'}); ss('bp_health',health); renderHealth(); showToast('✓ Row added'); }
+function delHealthRow(i) { health.splice(i,1); ss('bp_health',health); renderHealth(); showToast('✓ Row deleted'); }
+function addSchedRow() { health; sched.push({quarter:'Q? 2026',period:'— – —',due:'—',lead:'TBD',status:'Upcoming'}); ss('bp_sched',sched); renderSched(); showToast('✓ Row added'); }
+function delSchedRow(i) { sched.splice(i,1); ss('bp_sched',sched); renderSched(); showToast('✓ Row deleted'); }
+
+/* ════════════════════════════════════
+   ACCESS REQUEST FORM
+════════════════════════════════════ */
+const RT_CLASS = {'New User Provisioning':'rt-new','Access Modification':'rt-mod','Access Revocation':'rt-rev','Temporary Access':'rt-tmp','Role / Permission Change':'rt-role'};
+function selR(gid,el){document.querySelectorAll('#'+gid+' .pmo-ro').forEach(r=>r.classList.remove('sel'));el.classList.add('sel');}
+function selC(el){el.classList.toggle('sel',el.querySelector('input').checked);}
+function getRadio(name){const el=document.querySelector(`input[name="${name}"]:checked`);return el?el.value:'';}
+function getChecked(gid){return Array.from(document.querySelectorAll('#'+gid+' input[type=checkbox]:checked')).map(c=>c.value).join(', ')||'—';}
+
+function submitAccessRequest() {
+  const req = ['ua_rname','ua_remail','ua_fname','ua_lname','ua_email','ua_title','ua_dept','ua_manager','ua_start','ua_justification'];
+  let ok=true; req.forEach(id=>{const el=document.getElementById(id);const bad=!el.value.trim();el.style.borderColor=bad?'#E15D5D':'';if(bad)ok=false;});
+  if(!getRadio('ua_req_type')||!getRadio('ua_emp')||!getRadio('ua_approval')||!ok){showPmoToast('Missing Fields','Please complete all required fields.',true);return;}
+  reqCount++;
+  const now=new Date(); const ts=now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const row={num:reqCount,ts,reqType:getRadio('ua_req_type'),userName:document.getElementById('ua_fname').value.trim()+' '+document.getElementById('ua_lname').value.trim(),workEmail:document.getElementById('ua_email').value.trim(),dept:document.getElementById('ua_dept').value,title:document.getElementById('ua_title').value.trim(),emp:getRadio('ua_emp'),level:document.getElementById('ua_access_level').value||'—',systems:getChecked('ua_systems')+(document.getElementById('ua_other_sys').value.trim()?', '+document.getElementById('ua_other_sys').value.trim():''),start:document.getElementById('ua_start').value,end:document.getElementById('ua_end').value||'—',urgency:document.getElementById('ua_urgency').value||'—',approval:getRadio('ua_approval'),reqName:document.getElementById('ua_rname').value.trim(),reqEmail:document.getElementById('ua_remail').value.trim(),just:document.getElementById('ua_justification').value.trim()};
+  requests.unshift(row); renderRequests(); clearRequestForm();
+  showPmoToast('Request Submitted ✓','Logged in the Access Request Registry below.');
+}
+function renderRequests() {
+  document.getElementById('reqCount').textContent=requests.length+(requests.length===1?' entry':' entries');
+  if(!requests.length){document.getElementById('reqTableBody').innerHTML='<tr><td colspan="17"><div class="sheet-empty"><div class="sei">📋</div><p>No requests yet.<br>Complete the form above to log a request.</p></div></td></tr>';return;}
+  document.getElementById('reqTableBody').innerHTML=requests.map((r,i)=>`<tr class="${i===0?'new-row':''}"><td style="font-weight:700;color:#5E6C84;font-size:10px">#${r.num}</td><td style="font-size:10px;color:#5E6C84;white-space:nowrap">${r.ts}</td><td><span class="req-type-tag ${RT_CLASS[r.reqType]||'rt-new'}">${r.reqType}</span></td><td><strong>${r.userName}</strong></td><td style="font-size:10px;color:#5E6C84">${r.workEmail}</td><td>${r.dept}</td><td>${r.title}</td><td>${r.emp}</td><td>${r.level}</td><td style="font-size:10px;max-width:160px">${r.systems}</td><td style="white-space:nowrap">${r.start}</td><td style="white-space:nowrap">${r.end}</td><td style="font-size:10px">${r.urgency}</td><td style="font-size:10px">${r.approval}</td><td>${r.reqName}</td><td style="font-size:10px;color:#5E6C84;max-width:180px">${r.just}</td><td><span class="status-tag st-pending">Pending</span></td></tr>`).join('');
+}
+function clearRequestForm() {
+  ['ua_rname','ua_remail','ua_fname','ua_lname','ua_email','ua_title','ua_manager','ua_start','ua_end','ua_other_sys','ua_roles','ua_justification','ua_notes'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.style.borderColor='';}});
+  ['ua_dept','ua_access_level','ua_urgency'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
+  document.querySelectorAll('.pmo-ro.sel,.pmo-co.sel').forEach(el=>el.classList.remove('sel'));
+  document.querySelectorAll('#page-requests input[type=checkbox],#page-requests input[type=radio]').forEach(el=>el.checked=false);
+}
+function exportRequests() {
+  if(!requests.length){showToast('Nothing to export yet',true);return;}
+  if(typeof XLSX==='undefined'){showToast('XLSX not loaded',true);return;}
+  const wb=XLSX.utils.book_new();
+  const data=requests.map(r=>({'#':r.num,'Submitted':r.ts,'Request Type':r.reqType,'Full Name':r.userName,'Work Email':r.workEmail,'Department':r.dept,'Job Title':r.title,'Employment':r.emp,'Access Level':r.level,'Systems':r.systems,'Start':r.start,'End':r.end,'Urgency':r.urgency,'Approval':r.approval,'Requestor':r.reqName,'Requestor Email':r.reqEmail,'Justification':r.just,'Status':'Pending'}));
+  const ws=XLSX.utils.json_to_sheet(data); ws['!cols']=Array(18).fill({wch:26});
+  XLSX.utils.book_append_sheet(wb,ws,'Access Requests');
+  const d=new Date().toISOString().split('T')[0]; XLSX.writeFile(wb,`BombParty_Access_Requests_${d}.xlsx`);
+  showToast('✓ Excel exported');
+}
+
+/* ════════════════════════════════════
+   MODALS
+════════════════════════════════════ */
+function openModal(id) { document.getElementById(id).style.display='flex'; }
+function closeModal(id) { document.getElementById(id).style.display='none'; }
+function clearModalForm(pfx) { document.querySelectorAll(`[id^="${pfx}"]`).forEach(el=>{if(el.tagName==='INPUT'&&el.type!=='hidden')el.value='';if(el.tagName==='SELECT')el.selectedIndex=0;if(el.tagName==='TEXTAREA')el.value='';}); }
+function confirm2(msg, onOk) {
+  document.getElementById('confirmMsg').textContent=msg;
+  document.getElementById('confirmModal').style.display='flex';
+  const btn=document.getElementById('confirmOkBtn');
+  btn.onclick=()=>{closeModal('confirmModal');onOk();};
+}
+document.addEventListener('click', e => { if(e.target.classList.contains('modal-overlay'))closeModal(e.target.id); });
+
+/* ════════════════════════════════════
+   TOAST
+════════════════════════════════════ */
+let toastTimer;
+function showToast(msg, isErr=false) {
+  const t=document.getElementById('toastBar');
+  t.textContent=msg; t.style.background=isErr?'#BF2600':'#172B4D';
+  t.classList.add('show'); clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
+}
+function showPmoToast(title,body,err=false) {
+  showToast((err?'✗ ':'')+title+' — '+body, err);
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded',()=>{
+  const s=document.getElementById('ua_start'); if(s&&!s.value) s.value=new Date().toISOString().split('T')[0];
+});
+
+</script>
+
+
+<script>
+
+/* KPI AUTOMATION PATCH: Current Registry Metrics */
+(function () {
+  function textOf(el) {
+    return (el ? el.textContent : "").trim().toLowerCase();
+  }
+
+  function setKpi(id, value) {
+    const el = document.getElementById(id) || document.querySelector('[data-ek="' + id.replace(/^kpi-/, "kpi-") + '"]');
+    if (el) el.textContent = value;
+  }
+
+  function getUserRows() {
+    const body = document.getElementById("userTableBody");
+    if (!body) return [];
+    return Array.from(body.querySelectorAll("tr")).filter(function (row) {
+      return row.querySelectorAll("td").length > 1;
+    });
+  }
+
+  function getSystemRows() {
+    const body = document.getElementById("sysTableBody");
+    if (!body) return [];
+    return Array.from(body.querySelectorAll("tr")).filter(function (row) {
+      return row.querySelectorAll("td").length > 1;
+    });
+  }
+
+  function getRequestRows() {
+    const body = document.getElementById("reqTableBody");
+    if (!body) return [];
+    return Array.from(body.querySelectorAll("tr")).filter(function (row) {
+      return row.querySelectorAll("td").length > 1 && !textOf(row).includes("no requests yet");
+    });
+  }
+
+  window.updateRegistryMetrics = function () {
+    const userRows = getUserRows();
+    const systemRows = getSystemRows();
+    const requestRows = getRequestRows();
+
+    let totalUsers = userRows.length;
+    let activeAccounts = 0;
+    let revokedAccounts = 0;
+    let pendingReview = 0;
+    let privilegedAccounts = 0;
+
+    userRows.forEach(function (row) {
+      const cells = Array.from(row.querySelectorAll("td"));
+      const rowText = textOf(row);
+
+      if (rowText.includes("active")) activeAccounts++;
+      if (rowText.includes("revoked") || rowText.includes("deprovisioned") || rowText.includes("terminated")) revokedAccounts++;
+      if (rowText.includes("pending") || rowText.includes("review")) pendingReview++;
+
+      const roleText = cells[4] ? textOf(cells[4]) : "";
+      const accessText = rowText;
+
+      if (
+        roleText.includes("admin") ||
+        roleText.includes("super admin") ||
+        roleText.includes("owner") ||
+        accessText.includes("elevated") ||
+        accessText.includes("privileged")
+      ) {
+        privilegedAccounts++;
+      }
+    });
+
+    requestRows.forEach(function (row) {
+      const rowText = textOf(row);
+      if (rowText.includes("pending")) pendingReview++;
+    });
+
+    const systemsTracked = systemRows.length;
+
+    const kpis = {
+      "kpi-total": totalUsers,
+      "kpi-active": activeAccounts,
+      "kpi-revoked": revokedAccounts,
+      "kpi-pending": pendingReview,
+      "kpi-systems": systemsTracked,
+      "kpi-priv": privilegedAccounts
+    };
+
+    Object.keys(kpis).forEach(function (key) {
+      const el = document.querySelector('[data-ek="' + key + '"]');
+      if (el) el.textContent = kpis[key];
+    });
+
+    return kpis;
+  };
+
+  function observeAndUpdate(targetId) {
+    const target = document.getElementById(targetId);
+    if (!target || !window.MutationObserver) return;
+
+    const observer = new MutationObserver(function () {
+      clearTimeout(window.__kpiTimer);
+      window.__kpiTimer = setTimeout(window.updateRegistryMetrics, 100);
+    });
+
+    observer.observe(target, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+      window.updateRegistryMetrics();
+      observeAndUpdate("userTableBody");
+      observeAndUpdate("sysTableBody");
+      observeAndUpdate("reqTableBody");
+    }, 250);
+  });
+
+  window.addEventListener("load", function () {
+    setTimeout(window.updateRegistryMetrics, 500);
+  });
+})();
+
+</script>
+
+</body>
+</html>
+<script>
+window.addEventListener('DOMContentLoaded', function(){
+  // Keyboard login
+  ['loginUser','loginPass'].forEach(function(id){
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+  });
+  // Show/hide password
+  const showBtn = document.getElementById('showPassBtn');
+  if(showBtn) showBtn.onclick = function(){
+    const p = document.getElementById('loginPass');
+    p.type = p.type==='password' ? 'text' : 'password';
+  };
+  // Login button
+  const lb = document.getElementById('loginBtn');
+  if(lb) lb.onclick = function(){ doLogin(); };
+  // Init panes - show only first
+  document.querySelectorAll('.pane').forEach((p,i)=>{
+    p.style.display = i===0 ? 'block' : 'none';
+    p.classList.toggle('active', i===0);
+  });
+});
+</script>
+</body>
+</html>

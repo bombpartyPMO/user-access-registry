@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BombParty — System Access Request</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root{--citron:#EAE753;--navy:#0F3053;--green:#3DB88B;--amber:#F0B63C;--red:#E15D5D;--soft:#F7F9FC;--line:rgba(15,48,83,.10);--line2:rgba(15,48,83,.06);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--soft);color:#2C2C2C;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55}
+.nav{background:#fff;border-bottom:1px solid var(--line);padding:.7rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.nav-logo{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);background:rgba(234,231,83,.40);border:1px solid rgba(234,231,83,.6);padding:4px 10px;border-radius:100px}
+.wrap{max-width:780px;margin:0 auto;padding:2.5rem 1.5rem 6rem}
+.hero{background:var(--navy);color:#fff;padding:2rem;border-radius:16px;margin-bottom:1.75rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-40%;right:-5%;width:420px;height:420px;background:radial-gradient(circle,rgba(234,231,83,.1) 0%,transparent 62%);pointer-events:none}
+.eyebrow{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--citron);margin-bottom:.45rem;font-weight:700}
+.hero h1{font-size:1.4rem;font-weight:700;line-height:1.2;margin-bottom:.4rem}
+.hero h1 .acc{color:var(--citron)}
+.hero p{color:rgba(255,255,255,.5);font-size:.78rem;max-width:520px;line-height:1.65}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.6rem;margin-bottom:1.1rem}
+.card-hd{display:flex;align-items:center;gap:.75rem;margin-bottom:1.3rem;padding-bottom:1rem;border-bottom:1px solid var(--line2)}
+.card-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:#EEF8FF}
+.card-title{font-size:.84rem;font-weight:700;color:var(--navy)}
+.card-sub{font-size:.7rem;color:var(--navy);opacity:.42;margin-top:.12rem}
+.sdiv{display:flex;align-items:center;gap:.65rem;margin:1.3rem 0 .9rem}
+.sdiv span{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--navy);opacity:.35;white-space:nowrap}
+.sdiv::before,.sdiv::after{content:'';flex:1;height:1px;background:var(--line)}
+.req-note{font-size:.68rem;color:var(--red);margin-bottom:1rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+@media(max-width:600px){.g2,.g3{grid-template-columns:1fr}}
+.pf{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.9rem}
+.pf label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);opacity:.55}
+.pf label .req{color:var(--red);margin-left:2px}
+.pf input,.pf select,.pf textarea{font-family:'Inter',sans-serif;font-size:.82rem;color:#2C2C2C;background:#fff;border:1.5px solid rgba(15,48,83,.15);border-radius:9px;padding:.6rem .85rem;transition:border-color .18s;outline:none;width:100%}
+.pf input:focus,.pf select:focus,.pf textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(15,48,83,.06)}
+.pf input.err,.pf select.err,.pf textarea.err{border-color:var(--red)!important}
+.pf select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230F3053' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .8rem center}
+.pf textarea{resize:vertical;min-height:72px}
+.rg,.cg{display:flex;flex-wrap:wrap;gap:.45rem}
+.ro,.co{display:flex;align-items:center;gap:.45rem;padding:.45rem .85rem;border:1.5px solid rgba(15,48,83,.12);border-radius:9px;font-size:.75rem;cursor:pointer;transition:all .15s;user-select:none}
+.ro:hover,.co:hover{border-color:var(--navy);background:rgba(15,48,83,.03)}
+.ro.sel,.co.sel{background:rgba(15,48,83,.07);border-color:var(--navy);font-weight:600}
+.ro input,.co input{display:none}
+.actions{display:flex;align-items:center;gap:1rem;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--line2)}
+.submit-btn{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:.72rem 1.75rem;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:all .2s;min-width:190px;justify-content:center}
+.submit-btn:hover:not(:disabled){background:#173E69;transform:translateY(-1px)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.arr{color:var(--citron)}
+.clear-btn{background:none;border:none;color:var(--navy);opacity:.38;font-size:.78rem;font-family:'Inter',sans-serif;cursor:pointer;padding:.5rem}
+.clear-btn:hover{opacity:.7}
+#successScreen{display:none}
+.success-box{text-align:center;padding:3.5rem 2rem;background:#fff;border:1px solid var(--line);border-radius:16px}
+.s-icon{font-size:3.5rem;margin-bottom:1.1rem}
+.success-box h2{font-size:1.3rem;font-weight:700;color:var(--navy);margin-bottom:.5rem}
+.success-box p{font-size:.82rem;color:var(--navy);opacity:.52;line-height:1.7;max-width:400px;margin:0 auto 1.5rem}
+.s-ref{display:inline-block;background:rgba(234,231,83,.3);border:1px solid rgba(234,231,83,.7);color:var(--navy);font-weight:700;font-size:.78rem;padding:.48rem 1.2rem;border-radius:100px;letter-spacing:.04em}
+.new-btn{margin-top:1.5rem;display:inline-block;background:var(--navy);color:#fff;border:none;border-radius:9px;padding:.65rem 1.5rem;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:opacity .15s}
+.new-btn:hover{opacity:.85}
+.foot{text-align:center;margin-top:3rem;font-size:.68rem;color:var(--navy);opacity:.3;line-height:1.8}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div style="display:flex;align-items:center;gap:.8rem">
+    <span class="nav-logo">BombParty</span>
+    <span style="font-size:.78rem;font-weight:500;color:var(--navy);opacity:.5">System Access Request</span>
+  </div>
+  <div style="font-size:.7rem;color:var(--navy);opacity:.38;letter-spacing:.04em;text-transform:uppercase">Secure · Internal Use</div>
+</nav>
+
+<div class="wrap">
+
+  <div id="formScreen">
+    <div class="hero">
+      <div class="eyebrow">BombParty IT &amp; Systems</div>
+      <h1>Request <span class="acc">System Access</span></h1>
+      <p>Fill out this form to request access to BombParty platforms and tools. The IT Admin will be notified immediately and will process your request based on urgency level.</p>
+    </div>
+
+    <p class="req-note"><span style="color:var(--red);font-size:.8rem">*</span> Required fields</p>
+
+    <!-- REQUEST TYPE -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-ico">📋</div>
+        <div><div class="card-title">Request Type</div><div class="card-sub">What kind of access change do you need?</div></div>
+      </div>
+      <div class="pf">
+        <label>Request Type <span class="req">*</span></label>
+        <div class="rg" id="f_req_type">
+          <label class="ro" onclick="selR('f_req_type',this)"><input type="radio" name="f_req_type" value="New User Provisioning"/> 🆕 New Access</label>
+          <label class="ro" onclick="selR('f_req_type',this)"><input type="radio" name="f_req_type" value="Access Modification"/> ✏️ Modify Access</label>
+          <label class="ro" onclick="selR('f_req_type',this)"><input type="radio" name="f_req_type" value="Access Revocation"/> ❌ Revoke Access</label>
+          <label class="ro" onclick="selR('f_req_type',this)"><input type="radio" name="f_req_type" value="Temporary Access"/> ⏳ Temporary Access</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- REQUESTOR -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-ico">👤</div>
+        <div><div class="card-title">Your Information</div><div class="card-sub">The person submitting this request</div></div>
+      </div>
+      <div class="g2">
+        <div class="pf"><label>Your Full Name <span class="req">*</span></label><input id="f_rname" placeholder="Jane Smith"/></div>
+        <div class="pf"><label>Your Email <span class="req">*</span></label><input type="email" id="f_remail" placeholder="jane@bombparty.com"/></div>
+      </div>
+    </div>
+
+    <!-- USER TO PROVISION -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-ico">🧑‍💼</div>
+        <div><div class="card-title">User Being Provisioned</div><div class="card-sub">Who needs access? (can be yourself)</div></div>
+      </div>
+      <div class="g3">
+        <div class="pf"><label>First Name <span class="req">*</span></label><input id="f_fname" placeholder="First name"/></div>
+        <div class="pf"><label>Last Name <span class="req">*</span></label><input id="f_lname" placeholder="Last name"/></div>
+        <div class="pf"><label>Work Email <span class="req">*</span></label><input type="email" id="f_email" placeholder="user@bombparty.com"/></div>
+      </div>
+      <div class="g3">
+        <div class="pf"><label>Job Title <span class="req">*</span></label><input id="f_title" placeholder="e.g. Marketing Manager"/></div>
+        <div class="pf"><label>Department <span class="req">*</span></label>
+          <select id="f_dept">
+            <option value="">Select department</option>
+            <option>Product</option><option>Engineering</option><option>Design</option>
+            <option>Marketing</option><option>Operations</option><option>Finance</option>
+            <option>Legal / Compliance</option><option>HR / People</option>
+            <option>Executive</option><option>Contractor / External</option>
+          </select>
+        </div>
+        <div class="pf"><label>Direct Manager <span class="req">*</span></label><input id="f_manager" placeholder="Manager's full name"/></div>
+      </div>
+      <div class="g2">
+        <div class="pf"><label>Employment Type <span class="req">*</span></label>
+          <div class="rg" id="f_emp">
+            <label class="ro" onclick="selR('f_emp',this)"><input type="radio" name="f_emp" value="Full-time"/> Full-time</label>
+            <label class="ro" onclick="selR('f_emp',this)"><input type="radio" name="f_emp" value="Part-time"/> Part-time</label>
+            <label class="ro" onclick="selR('f_emp',this)"><input type="radio" name="f_emp" value="Contractor"/> Contractor</label>
+            <label class="ro" onclick="selR('f_emp',this)"><input type="radio" name="f_emp" value="Vendor"/> Vendor</label>
+          </div>
+        </div>
+        <div class="pf"><label>Requested Access Level</label>
+          <select id="f_level">
+            <option value="">Select (optional)</option>
+            <option>Read Only</option><option>Read / Write (Standard)</option>
+            <option>Elevated / Power User</option><option>Admin</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYSTEMS -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-ico">🖥</div>
+        <div><div class="card-title">Systems &amp; Applications</div><div class="card-sub">Select every platform you need access to</div></div>
+      </div>
+      <div class="pf">
+        <label>Systems Needed <span class="req">*</span></label>
+        <div class="cg" id="f_systems">
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="Exigo"/> Exigo</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="GetStream"/> GetStream</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="Contentful"/> Contentful</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="Jira"/> Jira</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="Confluence"/> Confluence</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="Slack"/> Slack</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="GitHub"/> GitHub</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="AWS"/> AWS</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="GCP"/> GCP</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="Azure AD"/> Azure AD</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="Datadog"/> Datadog</label>
+          <label class="co" onclick="selC(this)"><input type="checkbox" value="SharePoint M365"/> SharePoint / M365</label>
+        </div>
+      </div>
+      <div class="pf"><label>Other System / Specify</label><input id="f_other_sys" placeholder="Any tools not listed above"/></div>
+      <div class="g2">
+        <div class="pf"><label>Start Date</label><input type="date" id="f_start"/></div>
+        <div class="pf"><label>End Date (if temporary)</label><input type="date" id="f_end"/></div>
+      </div>
+    </div>
+
+    <!-- JUSTIFICATION -->
+    <div class="card">
+      <div class="card-hd">
+        <div class="card-ico">✅</div>
+        <div><div class="card-title">Justification &amp; Urgency</div><div class="card-sub">Help the IT team prioritize your request</div></div>
+      </div>
+      <div class="g2">
+        <div class="pf"><label>Urgency</label>
+          <div class="rg" id="f_urgency">
+            <label class="ro" onclick="selR('f_urgency',this)"><input type="radio" name="f_urgency" value="Standard"/> Standard (3 days)</label>
+            <label class="ro" onclick="selR('f_urgency',this)"><input type="radio" name="f_urgency" value="Urgent"/> Urgent (24 hrs)</label>
+            <label class="ro" onclick="selR('f_urgency',this)"><input type="radio" name="f_urgency" value="Emergency"/> Emergency (4 hrs)</label>
+          </div>
+        </div>
+        <div class="pf"><label>Manager Approval</label>
+          <div class="rg" id="f_approval">
+            <label class="ro" onclick="selR('f_approval',this)"><input type="radio" name="f_approval" value="Approved by Manager"/> ✅ Approved</label>
+            <label class="ro" onclick="selR('f_approval',this)"><input type="radio" name="f_approval" value="Pending Manager Approval"/> ⏳ Pending</label>
+          </div>
+        </div>
+      </div>
+      <div class="pf"><label>Business Justification <span class="req">*</span></label>
+        <textarea id="f_just" placeholder="Why is this access needed? What work does it support?"></textarea>
+      </div>
+      <div class="pf"><label>Additional Notes</label>
+        <textarea id="f_notes" placeholder="Special instructions, compliance notes, or anything else IT should know…" style="min-height:56px"></textarea>
+      </div>
+      <div class="actions">
+        <button class="submit-btn" id="submitBtn" onclick="submitForm()">
+          <span id="submitLabel">Submit Request</span>&nbsp;<span class="arr" id="submitArr">→</span>
+        </button>
+        <button class="clear-btn" onclick="clearForm()">Clear form</button>
+      </div>
+    </div>
+
+    <div class="foot">
+      BombParty &nbsp;·&nbsp; System Access Registry &nbsp;·&nbsp; IT Admin notified at tech@bombparty.com
+    </div>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div id="successScreen">
+    <div class="success-box">
+      <div class="s-icon">✅</div>
+      <h2>Request Submitted!</h2>
+      <p>Your access request has been logged and the BombParty IT team has been notified at <strong>tech@bombparty.com</strong>. You'll hear back within the urgency window you selected.</p>
+      <div class="s-ref" id="successRef">REQ-0001</div>
+      <br>
+      <button class="new-btn" onclick="resetForm()">Submit Another Request</button>
+    </div>
+    <div class="foot" style="margin-top:2rem">
+      Questions? Reach out to <strong>tech@bombparty.com</strong>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   EmailJS Config
+   ─────────────────────────────────────────────────────────────────
+   SETUP (5 minutes, free):
+   1. Sign up at https://www.emailjs.com (free = 200 emails/month)
+   2. Add Email Service → connect Gmail (or any email)
+   3. Create Email Template. In the template body use:
+        New Request: {{ref}}
+        Submitted: {{submitted}}
+        Type: {{req_type}}
+        User: {{user_name}} ({{user_email}})
+        Dept: {{dept}} | Title: {{title}} | Employment: {{emp_type}}
+        Systems: {{systems}}
+        Access Level: {{access_level}}
+        Start: {{start_date}} | Urgency: {{urgency}}
+        Approval: {{approval}}
+        Requestor: {{requestor}} ({{requestor_email}})
+        Manager: {{manager}}
+        Justification: {{justification}}
+        Notes: {{notes}}
+   4. Set "To Email" in the template to: tech@bombparty.com
+   5. Copy your Public Key, Service ID, Template ID below.
+   6. Paste the SAME values in index.html too.
+════════════════════════════════════════════════════════════════════ */
+/* ─── EmailJS Config — paste same 3 keys as index.html ──────────── */
+const EMAILJS_PUBLIC_KEY  = 'vL2Q1plSSV5m-pn2t';
+const EMAILJS_SERVICE_ID  = 'service_q3oweoa';
+const EMAILJS_TEMPLATE_ID = 'template_bruav4u';
+const NOTIFY_EMAIL        = 'tech@bombparty.com';
+
+(function(){
+  if(typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'vL2Q1plSSV5m-pn2t'){
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+  }
+})();
+
+function selR(gid, el){
+  document.querySelectorAll('#'+gid+' .ro').forEach(r=>r.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function selC(el){ el.classList.toggle('sel'); }
+function getRadio(name){ const el=document.querySelector('input[name="'+name+'"]:checked'); return el?el.value:''; }
+function getChecked(gid){ return Array.from(document.querySelectorAll('#'+gid+' input[type=checkbox]:checked')).map(c=>c.value).join(', ')||'—'; }
+function v(id){ const el=document.getElementById(id); return el?el.value.trim():''; }
+
+function validate(){
+  let ok=true;
+  ['f_rname','f_remail','f_fname','f_lname','f_email','f_title','f_manager','f_just'].forEach(id=>{
+    const el=document.getElementById(id); if(!el)return;
+    const bad=!el.value.trim(); el.classList.toggle('err',bad); if(bad)ok=false;
+  });
+  const dept=document.getElementById('f_dept');
+  if(!dept.value){dept.classList.add('err');ok=false;}else dept.classList.remove('err');
+  if(!getRadio('f_req_type'))ok=false;
+  if(!getRadio('f_emp'))ok=false;
+  const sysCks=Array.from(document.querySelectorAll('#f_systems input:checked'));
+  if(!sysCks.length&&!v('f_other_sys'))ok=false;
+  return ok;
+}
+
+let reqCounter=parseInt(localStorage.getItem('bp_req_external_count')||'0');
+
+function submitForm(){
+  if(!validate()){
+    alert('Please fill in all required fields and select at least one system.');
+    return;
+  }
+  const btn=document.getElementById('submitBtn');
+  const lbl=document.getElementById('submitLabel');
+  const arr=document.getElementById('submitArr');
+  btn.disabled=true; lbl.textContent='Submitting…'; arr.textContent='⏳';
+
+  reqCounter++;
+  localStorage.setItem('bp_req_external_count',reqCounter);
+
+  const now=new Date();
+  const ts=now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const ref='REQ-'+String(reqCounter).padStart(4,'0');
+
+  const checkedSys=getChecked('f_systems');
+  const otherSys=v('f_other_sys');
+  const systems=checkedSys+(otherSys?(checkedSys!=='—'?', ':'')+otherSys:'');
+
+  const row={
+    num:reqCounter, ts, source:'External Form',
+    reqType:getRadio('f_req_type')||'New User Provisioning',
+    userName:v('f_fname')+' '+v('f_lname'),
+    workEmail:v('f_email'),
+    dept:document.getElementById('f_dept').value,
+    title:v('f_title'),
+    emp:getRadio('f_emp'),
+    level:document.getElementById('f_level').value||'—',
+    systems,
+    start:document.getElementById('f_start').value||'—',
+    end:document.getElementById('f_end').value||'—',
+    urgency:getRadio('f_urgency')||'Standard',
+    approval:getRadio('f_approval')||'Pending Manager Approval',
+    reqName:v('f_rname'),
+    reqEmail:v('f_remail'),
+    manager:v('f_manager'),
+    just:v('f_just'),
+    notes:v('f_notes')||'—',
+  };
+
+  // ── Write to shared localStorage so the registry picks it up ──
+  try{
+    const existing=JSON.parse(localStorage.getItem('bp_requests')||'[]');
+    existing.unshift(row);
+    localStorage.setItem('bp_requests',JSON.stringify(existing));
+  }catch(e){console.warn('localStorage error',e);}
+
+  // ── Send email ──
+
+  function showSuccess(){
+    document.getElementById('formScreen').style.display='none';
+    document.getElementById('successScreen').style.display='block';
+    document.getElementById('successRef').textContent=ref;
+    window.scrollTo(0,0);
+  }
+
+  if(typeof emailjs !== 'undefined' && EMAILJS_PUBLIC_KEY !== 'vL2Q1plSSV5m-pn2t'){
+    const ref2 = 'REQ-'+String(reqCounter).padStart(4,'0');
+    emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: NOTIFY_EMAIL, ref: ref2, submitted: ts,
+      req_type: row.reqType, user_name: row.userName, user_email: row.workEmail,
+      dept: row.dept, title: row.title, emp_type: row.emp,
+      systems: row.systems, access_level: row.level, start_date: row.start,
+      urgency: row.urgency, approval: row.approval,
+      requestor: row.reqName, requestor_email: row.reqEmail,
+      manager: row.manager, justification: row.just, notes: row.notes,
+    }).then(showSuccess).catch(e => { console.warn('EmailJS err:', e); showSuccess(); });
+  } else {
+    console.warn('EmailJS not configured — request saved locally only.');
+    setTimeout(showSuccess, 600);
+  }
+}
+
+function clearForm(){
+  ['f_rname','f_remail','f_fname','f_lname','f_email','f_title','f_manager','f_just','f_notes','f_other_sys']
+    .forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.classList.remove('err');}});
+  ['f_dept','f_level'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
+  document.querySelectorAll('.ro.sel,.co.sel').forEach(el=>el.classList.remove('sel'));
+  document.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(el=>el.checked=false);
+}
+
+function resetForm(){
+  clearForm();
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=false;
+  document.getElementById('submitLabel').textContent='Submit Request';
+  document.getElementById('submitArr').textContent='→';
+  document.getElementById('formScreen').style.display='';
+  document.getElementById('successScreen').style.display='none';
+  window.scrollTo(0,0);
+}
+
+document.addEventListener('input',e=>{if(e.target.classList.contains('err'))e.target.classList.remove('err');});
+</script>
+</body>
+</html>
